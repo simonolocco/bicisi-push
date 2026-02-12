@@ -1,0 +1,42 @@
+[
+  {
+    "id": "23f3206a-a0e2-470c-a94a-57866f3aeb38",
+    "name": "Bicicleta Aluminio",
+    "description": "Bicicleta liviana de aluminio, ideal para paseos",
+    "price_full_day": 15000,
+    "price_half_day": 10000,
+    "price_per_hour": 3000,
+    "stock": 10,
+    "image": "/static/images/bici-aluminio.jpg"
+  },
+  {
+    "id": "c2c7490e-a7eb-463d-a003-3c45c61d9eef",
+    "name": "Bicicleta Acero",
+    "description": "Bicicleta resistente de acero, perfecta para todo terreno",
+    "price_full_day": 12000,
+    "price_half_day": 8000,
+    "price_per_hour": 2500,
+    "stock": 8,
+    "image": "/static/images/bici-acero.jpg"
+  },
+  {
+    "id": "a7b543fe-b81e-494b-b9bd-b7e663d8e3cc",
+    "name": "Sillita para Niño",
+    "description": "Sillita de seguridad para transportar niños",
+    "price_full_day": 5000,
+    "price_half_day": 3000,
+    "price_per_hour": 1000,
+    "stock": 5,
+    "image": "/static/images/sillita.jpg"
+  },
+  {
+    "id": "8cf4f9f2-c2bf-4497-845b-d6a461d2c6e2",
+    "name": "Remolque",
+    "description": "Remolque para llevar equipaje o niños",
+    "price_full_day": 8000,
+    "price_half_day": 5000,
+    "price_per_hour": 2000,
+    "stock": 3,
+    "image": "/static/images/remolque.jpg"
+  }
+]

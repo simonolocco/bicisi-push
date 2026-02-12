@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservar Bicicleta - BiciSí</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
+                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'light': '#D1FAE5', 'accent': '#F59E0B' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .step-active {
+            border-color: #10B981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .step-completed {
+            border-color: #10B981;
+            background: #10B981;
+        }
+
+        .hour-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .hour-btn.selected {
+            background: #10B981;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen">
+    <nav class="bg-gray-900/80 backdrop-blur-lg border-b border-gray-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-bicisi-primary to-bicisi-accent rounded-xl flex items-center justify-center">
+                    <i class="fas fa-bicycle text-white"></i>
+                </div>
+                <span class="text-xl font-bold">BiciSí</span>
+            </a>
+            <a href="https://wa.me/5493513426691" class="text-bicisi-primary hover:underline flex items-center gap-2">
+                <i class="fab fa-whatsapp"></i> Ayuda
+            </a>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <!-- Progress Steps -->
+        <div class="flex items-center justify-center mb-12">
+            <div class="flex items-center gap-4" id="progressSteps">
+                <div class="step flex items-center gap-2" data-step="1">
+                    <div class="w-10 h-10 rounded-full border-2 flex items-center justify-center step-active"
+                        id="step1"><span>1</span></div>
+                    <span class="hidden sm:block text-sm">Bicicletas</span>
+                </div>
+                <div class="w-8 h-0.5 bg-gray-700"></div>
+                <div class="step flex items-center gap-2" data-step="2">
+                    <div class="w-10 h-10 rounded-full border-2 border-gray-700 flex items-center justify-center"
+                        id="step2"><span>2</span></div>
+                    <span class="hidden sm:block text-sm text-gray-500">Fecha/Hora</span>
+                </div>
+                <div class="w-8 h-0.5 bg-gray-700"></div>
+                <div class="step flex items-center gap-2" data-step="3">
+                    <div class="w-10 h-10 rounded-full border-2 border-gray-700 flex items-center justify-center"
+                        id="step3"><span>3</span></div>
+                    <span class="hidden sm:block text-sm text-gray-500">Pago</span>
+                </div>
+                <div class="w-8 h-0.5 bg-gray-700"></div>
+                <div class="step flex items-center gap-2" data-step="4">
+                    <div class="w-10 h-10 rounded-full border-2 border-gray-700 flex items-center justify-center"
+                        id="step4"><span>4</span></div>
+                    <span class="hidden sm:block text-sm text-gray-500">Confirmar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Select Bikes -->
+        <div id="stepContent1" class="step-content">
+            <h2 class="text-3xl font-bold mb-6 text-center">Selecciona tus Bicicletas</h2>
+            <div class="grid md:grid-cols-2 gap-4" id="categoriesGrid"></div>
+            <div class="mt-8 p-6 bg-gray-800 rounded-2xl" id="cartSummary" style="display:none">
+                <h3 class="font-bold mb-4">Tu selección:</h3>
+                <div id="cartItems"></div>
+                <button onclick="nextStep(2)"
+                    class="mt-4 w-full bg-gradient-to-r from-bicisi-primary to-bicisi-secondary py-3 rounded-xl font-bold">
+                    Continuar <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Date and Time -->
+        <div id="stepContent2" class="step-content hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center">Fecha y Horario</h2>
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6">
+                <label class="block mb-4">
+                    <span class="text-gray-400 mb-2 block">Tipo de alquiler</span>
+                    <select id="rentalType" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                        onchange="updateRentalOptions()">
+                        <option value="full_day">Día completo (8:00 - 19:00)</option>
+                        <option value="half_day">Medio día</option>
+                        <option value="hours">Por horas</option>
+                        <option value="multi_day">Varios días</option>
+                    </select>
+                </label>
+                <div id="dateInputs">
+                    <label class="block mb-4">
+                        <span class="text-gray-400 mb-2 block">Fecha de inicio</span>
+                        <input type="date" id="startDate"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                            onchange="loadTimeSlots()">
+                    </label>
+                    <div id="endDateContainer" class="hidden">
+                        <label class="block mb-4">
+                            <span class="text-gray-400 mb-2 block">Fecha de fin</span>
+                            <input type="date" id="endDate"
+                                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3">
+                        </label>
+                    </div>
+                </div>
+                <div id="halfDayOptions" class="hidden mb-4">
+                    <span class="text-gray-400 mb-2 block">Turno</span>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button type="button"
+                            class="half-day-btn bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 hover:border-bicisi-primary"
+                            data-shift="morning" onclick="selectHalfDay('morning')">Mañana (8:00-13:00)</button>
+                        <button type="button"
+                            class="half-day-btn bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 hover:border-bicisi-primary"
+                            data-shift="afternoon" onclick="selectHalfDay('afternoon')">Tarde (13:00-19:00)</button>
+                    </div>
+                </div>
+                <div id="hoursContainer" class="hidden">
+                    <span class="text-gray-400 mb-2 block">Selecciona las horas (horarios inhabilitados por
+                        logística)</span>
+                    <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2" id="hourSlots"></div>
+                    <p class="text-sm text-gray-500 mt-2">Mínimo 1 hora. La hora anterior y posterior a tu reserva están
+                        reservadas para logística.</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="prevStep(1)" class="flex-1 bg-gray-700 py-3 rounded-xl font-bold"><i
+                        class="fas fa-arrow-left mr-2"></i> Atrás</button>
+                <button onclick="nextStep(3)" id="btnToStep3"
+                    class="flex-1 bg-gradient-to-r from-bicisi-primary to-bicisi-secondary py-3 rounded-xl font-bold"
+                    disabled>Continuar <i class="fas fa-arrow-right ml-2"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 3: Payment Method -->
+        <div id="stepContent3" class="step-content hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center">Método de Pago</h2>
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div class="payment-option bg-gray-800 rounded-2xl p-6 border-2 border-transparent cursor-pointer hover:border-bicisi-primary transition-all"
+                    onclick="selectPayment('transfer')">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-14 h-14 bg-bicisi-primary/20 rounded-xl flex items-center justify-center"><i
+                                class="fas fa-university text-bicisi-primary text-2xl"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Transferencia</h3><span
+                                class="text-bicisi-primary text-sm">Modo FULL</span>
+                        </div>
+                    </div>
+                    <ul class="text-sm text-gray-400 space-y-2">
+                        <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Seña del 50% para confirmar</li>
+                        <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Elegí ubicación de entrega</li>
+                        <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Elegí ubicación de retiro</li>
+                        <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Reserva confirmada al instante</li>
+                    </ul>
+                </div>
+                <div class="payment-option bg-gray-800 rounded-2xl p-6 border-2 border-transparent cursor-pointer hover:border-bicisi-accent transition-all"
+                    onclick="selectPayment('cash')">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-14 h-14 bg-bicisi-accent/20 rounded-xl flex items-center justify-center"><i
+                                class="fas fa-money-bill-wave text-bicisi-accent text-2xl"></i></div>
+                        <div>
+                            <h3 class="font-bold text-lg">Efectivo</h3><span class="text-bicisi-accent text-sm">Modo
+                                ECO</span>
+                        </div>
+                    </div>
+                    <ul class="text-sm text-gray-400 space-y-2">
+                        <li><i class="fas fa-check text-bicisi-accent mr-2"></i>Pagás al retirar</li>
+                        <li><i class="fas fa-info-circle text-bicisi-accent mr-2"></i>Retiro en sucursal</li>
+                        <li><i class="fas fa-info-circle text-bicisi-accent mr-2"></i>Devolución en sucursal</li>
+                        <li><i class="fas fa-exclamation-triangle text-bicisi-accent mr-2"></i>Reserva pendiente</li>
+                    </ul>
+                </div>
+            </div>
+            <div id="locationInputs" class="hidden bg-gray-800 rounded-2xl p-6 mb-6">
+                <h3 class="font-bold mb-4">Ubicaciones de entrega/retiro</h3>
+                <label class="block mb-4">
+                    <span class="text-gray-400 mb-2 block">Dirección de entrega</span>
+                    <input type="text" id="pickupLocation"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                        placeholder="Ej: Hotel X, Av. San Martín 123">
+                </label>
+                <label class="block">
+                    <span class="text-gray-400 mb-2 block">Dirección de devolución</span>
+                    <input type="text" id="returnLocation"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                        placeholder="Ej: Mismo lugar u otra dirección">
+                </label>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="prevStep(2)" class="flex-1 bg-gray-700 py-3 rounded-xl font-bold"><i
+                        class="fas fa-arrow-left mr-2"></i> Atrás</button>
+                <button onclick="nextStep(4)" id="btnToStep4"
+                    class="flex-1 bg-gradient-to-r from-bicisi-primary to-bicisi-secondary py-3 rounded-xl font-bold"
+                    disabled>Continuar <i class="fas fa-arrow-right ml-2"></i></button>
+            </div>
+        </div>
+
+        <!-- Step 4: Confirmation -->
+        <div id="stepContent4" class="step-content hidden">
+            <h2 class="text-3xl font-bold mb-6 text-center">Confirmar Reserva</h2>
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6">
+                <h3 class="font-bold mb-4 text-lg">Resumen de tu reserva</h3>
+                <div id="finalSummary"></div>
+                <div class="border-t border-gray-700 mt-4 pt-4">
+                    <div class="flex justify-between font-bold text-lg"><span>Total:</span><span id="totalPrice"
+                            class="text-bicisi-primary">$0</span></div>
+                    <div class="flex justify-between text-bicisi-accent mt-2" id="depositRow"><span>Seña
+                            (50%):</span><span id="depositPrice">$0</span></div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-2xl p-6 mb-6">
+                <h3 class="font-bold mb-4 text-lg">Tus datos</h3>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <label class="block"><span class="text-gray-400 mb-2 block">Nombre completo *</span><input
+                            type="text" id="customerName"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3" required></label>
+                    <label class="block"><span class="text-gray-400 mb-2 block">Teléfono *</span><input type="tel"
+                            id="customerPhone" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                            required></label>
+                    <label class="block"><span class="text-gray-400 mb-2 block">Email</span><input type="email"
+                            id="customerEmail"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"></label>
+                    <label class="block"><span class="text-gray-400 mb-2 block">Número de DNI *</span><input type="text"
+                            id="customerDni" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                            required></label>
+                </div>
+
+                <!-- DNI Photo Upload -->
+                <div class="mt-6 p-4 bg-gray-700/50 rounded-xl border-2 border-dashed border-gray-600">
+                    <h4 class="font-bold mb-2"><i class="fas fa-id-card mr-2 text-bicisi-primary"></i>Foto del DNI
+                        (frente y dorso) *</h4>
+                    <p class="text-sm text-gray-400 mb-4">Subí una foto clara de tu DNI para validar tu identidad y
+                        compromiso con el equipo.</p>
+
+                    <div id="dniUploadArea" class="relative">
+                        <input type="file" id="dniPhoto" accept="image/*" class="hidden"
+                            onchange="handleDniUpload(event)">
+                        <div id="dniPreview" class="hidden mb-4">
+                            <img id="dniPreviewImg" class="max-h-48 rounded-xl mx-auto border border-gray-600">
+                            <button onclick="removeDniPhoto()"
+                                class="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full"><i
+                                    class="fas fa-times"></i></button>
+                        </div>
+                        <button type="button" onclick="document.getElementById('dniPhoto').click()" id="dniUploadBtn"
+                            class="w-full bg-gray-600 hover:bg-gray-500 py-4 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-camera text-xl"></i>
+                            <span>Subir foto del DNI</span>
+                        </button>
+                        <p id="dniUploadStatus" class="text-center mt-2 text-sm hidden"></p>
+                    </div>
+                </div>
+            </div>
+            <div id="bankInfo"
+                class="hidden bg-gradient-to-br from-bicisi-primary/20 to-bicisi-dark/20 border border-bicisi-primary/30 rounded-2xl p-6 mb-6">
+                <h3 class="font-bold mb-4 text-lg"><i class="fas fa-university mr-2"></i>Datos para Transferencia</h3>
+                <div class="space-y-2 text-sm">
+                    <p><strong>Banco:</strong> Banco Francés BBVA</p>
+                    <p><strong>Cuenta:</strong> 274-22784/8</p>
+                    <p><strong>CBU:</strong> 0170274540000002278483</p>
+                    <p><strong>Alias:</strong> BICISI.26</p>
+                    <p><strong>Titular:</strong> Brunazzi Lucas</p>
+                </div>
+                <p class="text-bicisi-accent mt-4 text-sm"><i class="fas fa-info-circle mr-1"></i> Enviá el comprobante
+                    por WhatsApp para confirmar</p>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="prevStep(3)" class="flex-1 bg-gray-700 py-3 rounded-xl font-bold"><i
+                        class="fas fa-arrow-left mr-2"></i> Atrás</button>
+                <button onclick="submitReservation()" id="btnSubmit"
+                    class="flex-1 bg-gradient-to-r from-bicisi-primary to-bicisi-secondary py-3 rounded-xl font-bold">Confirmar
+                    Reserva <i class="fas fa-check ml-2"></i></button>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="successModal"
+            class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-gray-800 rounded-3xl p-8 max-w-md w-full text-center">
+                <div class="w-20 h-20 bg-bicisi-primary rounded-full flex items-center justify-center mx-auto mb-6"><i
+                        class="fas fa-check text-white text-4xl"></i></div>
+                <h3 class="text-2xl font-bold mb-4">¡Reserva Creada!</h3>
+                <p class="text-gray-400 mb-6" id="successMessage"></p>
+                <a href="https://wa.me/5493513426691"
+                    class="inline-block bg-green-600 text-white px-6 py-3 rounded-xl font-bold mb-4"><i
+                        class="fab fa-whatsapp mr-2"></i>Enviar comprobante</a>
+                <br><a href="/" class="text-bicisi-primary hover:underline">Volver al inicio</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let categories = [];
+        let cart = {};
+        let selectedPayment = null;
+        let selectedHalfDay = null;
+        let selectedHours = [];
+        let calculatedTotal = 0;
+        let calculatedDeposit = 0;
+        let dniPhotoUrl = null;
+        let currentStep = 1;
+
+        async function init() {
+            const res = await fetch('/api/categories');
+            categories = await res.json();
+            renderCategories();
+            setMinDate();
+        }
+
+        function setMinDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').min = today;
+            document.getElementById('endDate').min = today;
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = categories.map(cat => {
+                const hasImage = cat.image && !cat.image.includes('default');
+                return `
+                <div class="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
+                    <div class="h-40 bg-gradient-to-br from-bicisi-primary/20 to-bicisi-dark/40 flex items-center justify-center overflow-hidden">
+                        ${hasImage
+                        ? `<img src="${cat.image}" alt="${cat.name}" class="w-full h-full object-cover">`
+                        : `<i class="fas fa-bicycle text-5xl text-bicisi-primary/50"></i>`
+                    }
+                    </div>
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold">${cat.name}</h3>
+                            <span class="bg-bicisi-primary/20 text-bicisi-primary px-2 py-1 rounded-lg text-xs">${cat.stock} disp.</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-3">${cat.description || ''}</p>
+                        <div class="text-sm text-gray-400 mb-3 space-y-1">
+                            <div class="flex justify-between"><span>Día:</span><span class="text-bicisi-primary font-bold">$${cat.price_full_day.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>½ Día:</span><span class="text-bicisi-primary font-bold">$${cat.price_half_day.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>Hora:</span><span class="text-bicisi-primary font-bold">$${cat.price_per_hour.toLocaleString()}</span></div>
+                        </div>
+                        <div class="flex items-center justify-center gap-3 bg-gray-700/50 rounded-xl p-2">
+                            <button onclick="updateCart('${cat.id}', -1)" class="w-10 h-10 bg-gray-600 hover:bg-gray-500 rounded-lg text-xl transition-colors">-</button>
+                            <span id="qty-${cat.id}" class="w-10 text-center text-xl font-bold">0</span>
+                            <button onclick="updateCart('${cat.id}', 1)" class="w-10 h-10 bg-bicisi-primary hover:bg-bicisi-secondary rounded-lg text-xl transition-colors">+</button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function updateCart(catId, delta) {
+            const cat = categories.find(c => c.id === catId);
+            if (!cart[catId]) cart[catId] = { quantity: 0, category: cat };
+            cart[catId].quantity = Math.max(0, Math.min(cat.stock, cart[catId].quantity + delta));
+            document.getElementById(`qty-${catId}`).textContent = cart[catId].quantity;
+            updateCartSummary();
+        }
+
+        function updateCartSummary() {
+            const items = Object.values(cart).filter(item => item.quantity > 0);
+            const summary = document.getElementById('cartSummary');
+            const cartItems = document.getElementById('cartItems');
+            if (items.length === 0) { summary.style.display = 'none'; return; }
+            summary.style.display = 'block';
+            cartItems.innerHTML = items.map(item => `<div class="flex justify-between py-2 border-b border-gray-700"><span>${item.category.name}</span><span>x${item.quantity}</span></div>`).join('');
+        }
+
+        function updateRentalOptions() {
+            const type = document.getElementById('rentalType').value;
+            document.getElementById('endDateContainer').classList.toggle('hidden', type !== 'multi_day');
+            document.getElementById('halfDayOptions').classList.toggle('hidden', type !== 'half_day');
+            document.getElementById('hoursContainer').classList.toggle('hidden', type !== 'hours');
+            validateStep2();
+        }
+
+        function selectHalfDay(shift) {
+            selectedHalfDay = shift;
+            document.querySelectorAll('.half-day-btn').forEach(btn => {
+                btn.classList.toggle('border-bicisi-primary', btn.dataset.shift === shift);
+                btn.classList.toggle('bg-bicisi-primary/20', btn.dataset.shift === shift);
+            });
+            validateStep2();
+        }
+
+        async function loadTimeSlots() {
+            const date = document.getElementById('startDate').value;
+            if (!date) return;
+            const firstItem = Object.values(cart).find(item => item.quantity > 0);
+            if (!firstItem) return;
+
+            const res = await fetch('/api/available-slots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, category_id: firstItem.category.id, quantity: firstItem.quantity })
+            });
+            const data = await res.json();
+            renderHourSlots(data.slots);
+            validateStep2();
+        }
+
+        function renderHourSlots(slots) {
+            const container = document.getElementById('hourSlots');
+            container.innerHTML = slots.map(slot => `
+                <button type="button" class="hour-btn bg-gray-700 border border-gray-600 rounded-lg py-2 text-sm ${!slot.available ? 'opacity-40 cursor-not-allowed' : ''}" 
+                    ${!slot.available ? 'disabled' : ''} onclick="toggleHour(${slot.hour})" data-hour="${slot.hour}">
+                    ${slot.label}
+                </button>
+            `).join('');
+        }
+
+        function toggleHour(hour) {
+            const idx = selectedHours.indexOf(hour);
+            if (idx > -1) selectedHours.splice(idx, 1);
+            else selectedHours.push(hour);
+            selectedHours.sort((a, b) => a - b);
+            document.querySelectorAll('.hour-btn').forEach(btn => {
+                btn.classList.toggle('selected', selectedHours.includes(parseInt(btn.dataset.hour)));
+            });
+            validateStep2();
+        }
+
+        function validateStep2() {
+            const type = document.getElementById('rentalType').value;
+            const startDate = document.getElementById('startDate').value;
+            let valid = !!startDate;
+            if (type === 'multi_day') valid = valid && !!document.getElementById('endDate').value;
+            if (type === 'half_day') valid = valid && !!selectedHalfDay;
+            if (type === 'hours') valid = valid && selectedHours.length > 0;
+            document.getElementById('btnToStep3').disabled = !valid;
+        }
+
+        function selectPayment(method) {
+            selectedPayment = method;
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('border-bicisi-primary', 'border-bicisi-accent'));
+            if (method === 'transfer') {
+                document.querySelector('.payment-option:first-child').classList.add('border-bicisi-primary');
+                document.getElementById('locationInputs').classList.remove('hidden');
+            } else {
+                document.querySelector('.payment-option:last-child').classList.add('border-bicisi-accent');
+                document.getElementById('locationInputs').classList.add('hidden');
+            }
+            document.getElementById('btnToStep4').disabled = false;
+        }
+
+        function nextStep(step) {
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`stepContent${step}`).classList.remove('hidden');
+            currentStep = step;
+            updateStepIndicators();
+            if (step === 4) updateFinalSummary();
+        }
+
+        function prevStep(step) {
+            nextStep(step);
+        }
+
+        function updateStepIndicators() {
+            for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById(`step${i}`);
+                el.className = 'w-10 h-10 rounded-full border-2 flex items-center justify-center ';
+                if (i < currentStep) el.className += 'step-completed text-white';
+                else if (i === currentStep) el.className += 'step-active';
+                else el.className += 'border-gray-700';
+            }
+        }
+
+        async function updateFinalSummary() {
+            const items = Object.values(cart).filter(item => item.quantity > 0).map(item => ({
+                category_id: item.category.id, quantity: item.quantity
+            }));
+            const type = document.getElementById('rentalType').value;
+            let hours = 0, days = 1;
+            if (type === 'hours') hours = selectedHours.length;
+            if (type === 'multi_day') {
+                const start = new Date(document.getElementById('startDate').value);
+                const end = new Date(document.getElementById('endDate').value);
+                days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
+            }
+
+            const res = await fetch('/api/calculate-price', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items, rental_type: type, hours, days, payment_method: selectedPayment })
+            });
+            const data = await res.json();
+
+            const summary = document.getElementById('finalSummary');
+            summary.innerHTML = data.breakdown.map(item => `<div class="flex justify-between py-2 border-b border-gray-700"><span>${item.label}</span><span>$${item.price.toLocaleString()}</span></div>`).join('');
+
+            // Store calculated values for submission
+            calculatedTotal = data.total;
+            calculatedDeposit = data.deposit;
+
+            document.getElementById('totalPrice').textContent = `$${data.total.toLocaleString()}`;
+            document.getElementById('depositPrice').textContent = `$${data.deposit.toLocaleString()}`;
+            document.getElementById('depositRow').classList.toggle('hidden', selectedPayment !== 'transfer');
+            document.getElementById('bankInfo').classList.toggle('hidden', selectedPayment !== 'transfer');
+        }
+
+        async function handleDniUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('dniUploadStatus');
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = 'Subiendo foto...';
+            statusEl.className = 'text-center mt-2 text-sm text-yellow-400';
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const res = await fetch('/api/upload-dni', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.url) {
+                    dniPhotoUrl = data.url;
+                    document.getElementById('dniPreviewImg').src = data.url;
+                    document.getElementById('dniPreview').classList.remove('hidden');
+                    document.getElementById('dniUploadBtn').innerHTML = '<i class="fas fa-check mr-2"></i>Foto subida - Cambiar';
+                    statusEl.textContent = '✓ Foto del DNI subida correctamente';
+                    statusEl.className = 'text-center mt-2 text-sm text-green-400';
+                } else {
+                    throw new Error('Error al subir');
+                }
+            } catch (e) {
+                statusEl.textContent = '✗ Error al subir la foto. Intenta nuevamente.';
+                statusEl.className = 'text-center mt-2 text-sm text-red-400';
+            }
+        }
+
+        function removeDniPhoto() {
+            dniPhotoUrl = null;
+            document.getElementById('dniPhoto').value = '';
+            document.getElementById('dniPreview').classList.add('hidden');
+            document.getElementById('dniUploadBtn').innerHTML = '<i class="fas fa-camera text-xl"></i><span>Subir foto del DNI</span>';
+            document.getElementById('dniUploadStatus').classList.add('hidden');
+        }
+
+        async function submitReservation() {
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const dni = document.getElementById('customerDni').value;
+
+            if (!name || !phone) { alert('Por favor completa nombre y teléfono'); return; }
+            if (!dni) { alert('Por favor ingresa tu número de DNI'); return; }
+            if (!dniPhotoUrl) { alert('Por favor sube una foto de tu DNI para continuar'); return; }
+
+            const items = Object.values(cart).filter(item => item.quantity > 0).map(item => ({
+                category_id: item.category.id, quantity: item.quantity
+            }));
+            const type = document.getElementById('rentalType').value;
+            let startHour = 8, endHour = 19;
+            if (type === 'half_day') {
+                if (selectedHalfDay === 'morning') { startHour = 8; endHour = 13; }
+                else { startHour = 13; endHour = 19; }
+            }
+            if (type === 'hours') {
+                startHour = Math.min(...selectedHours);
+                endHour = Math.max(...selectedHours) + 1;
+            }
+
+            const reservation = {
+                items,
+                rental_type: type,
+                start_date: document.getElementById('startDate').value,
+                end_date: type === 'multi_day' ? document.getElementById('endDate').value : document.getElementById('startDate').value,
+                start_hour: startHour,
+                end_hour: endHour,
+                customer_name: name,
+                customer_phone: phone,
+                customer_email: document.getElementById('customerEmail').value,
+                customer_dni: dni,
+                dni_photo: dniPhotoUrl,
+                payment_method: selectedPayment,
+                pickup_location: selectedPayment === 'transfer' ? document.getElementById('pickupLocation').value : 'sucursal',
+                return_location: selectedPayment === 'transfer' ? document.getElementById('returnLocation').value : 'sucursal',
+                total: calculatedTotal,
+                deposit: calculatedDeposit
+            };
+
+            const res = await fetch('/api/reservations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reservation)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('successMessage').textContent = selectedPayment === 'transfer'
+                    ? 'Tu reserva está confirmada. Envía el comprobante de transferencia por WhatsApp.'
+                    : 'Tu reserva está pendiente. Presentate en sucursal para confirmar.';
+                document.getElementById('successModal').classList.remove('hidden');
+            } else {
+                alert(data.error || 'Error al crear la reserva');
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

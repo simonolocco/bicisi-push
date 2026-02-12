@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - BiciSí</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
+                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'accent': '#F59E0B' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #10B981;
+            color: #10B981;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-bicisi-primary to-bicisi-accent rounded-xl flex items-center justify-center">
+                    <i class="fas fa-bicycle text-white"></i>
+                </div>
+                <span class="text-xl font-bold">BiciSí Admin</span>
+            </div>
+            <a href="/admin/logout" class="text-gray-400 hover:text-red-400 transition-colors">
+                <i class="fas fa-sign-out-alt mr-2"></i>Cerrar sesión
+            </a>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-bicisi-primary/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-calendar-check text-bicisi-primary text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold" id="statTotal">0</div>
+                        <div class="text-sm text-gray-400">Total Reservas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold" id="statConfirmed">0</div>
+                        <div class="text-sm text-gray-400">Confirmadas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-clock text-yellow-500 text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold" id="statPending">0</div>
+                        <div class="text-sm text-gray-400">Pendientes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-bicycle text-blue-500 text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold" id="statStock">0</div>
+                        <div class="text-sm text-gray-400">Stock Total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-6 border-b border-gray-700 mb-8">
+            <button onclick="showTab('reservations')" class="tab-btn tab-active pb-4 font-semibold"
+                data-tab="reservations">
+                <i class="fas fa-calendar-alt mr-2"></i>Reservas
+            </button>
+            <button onclick="showTab('categories')" class="tab-btn pb-4 font-semibold text-gray-400"
+                data-tab="categories">
+                <i class="fas fa-bicycle mr-2"></i>Categorías
+            </button>
+            <button onclick="showTab('bot')" class="tab-btn pb-4 font-semibold text-gray-400" data-tab="bot">
+                <i class="fab fa-whatsapp mr-2"></i>Mensajes Bot
+            </button>
+        </div>
+
+        <!-- Reservations Tab -->
+        <div id="tab-reservations" class="tab-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Reservas</h2>
+                <div class="flex gap-2">
+                    <select id="filterStatus" onchange="loadReservations()"
+                        class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
+                        <option value="">Todos los estados</option>
+                        <option value="confirmed">Confirmadas</option>
+                        <option value="pending">Pendientes</option>
+                        <option value="overridden">Sobrescritas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-700/50">
+                            <tr>
+                                <th class="text-left px-6 py-4 text-sm font-medium text-gray-400">Cliente</th>
+                                <th class="text-left px-6 py-4 text-sm font-medium text-gray-400">Items</th>
+                                <th class="text-left px-6 py-4 text-sm font-medium text-gray-400">Fecha</th>
+                                <th class="text-left px-6 py-4 text-sm font-medium text-gray-400">Pago</th>
+                                <th class="text-left px-6 py-4 text-sm font-medium text-gray-400">Estado</th>
+                                <th class="text-left px-6 py-4 text-sm font-medium text-gray-400">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservationsTable"></tbody>
+                    </table>
+                </div>
+                <div id="noReservations" class="hidden p-8 text-center text-gray-500">
+                    <i class="fas fa-calendar-times text-4xl mb-4"></i>
+                    <p>No hay reservas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Tab -->
+        <div id="tab-categories" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Categorías de Bicicletas</h2>
+                <button onclick="openCategoryModal()"
+                    class="bg-bicisi-primary text-white px-4 py-2 rounded-xl font-semibold">
+                    <i class="fas fa-plus mr-2"></i>Nueva Categoría
+                </button>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="categoriesGrid"></div>
+        </div>
+
+        <!-- Bot Settings Tab -->
+        <div id="tab-bot" class="tab-content hidden">
+            <h2 class="text-2xl font-bold mb-6">Configuración de Mensajes del Bot (WhatsApp)</h2>
+            <div class="bg-gray-800 rounded-2xl border border-gray-700 p-8">
+                <form id="botSettingsForm" onsubmit="saveSettings(event)" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Mensaje de Bienvenida /
+                                    Menú</label>
+                                <textarea id="msg_welcome" name="msg_welcome" rows="5"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Información de
+                                    Planes</label>
+                                <textarea id="msg_planes" name="msg_planes" rows="4"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Detalle Modo ECO</label>
+                                <textarea id="msg_eco" name="msg_eco" rows="4"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Detalle Modo FULL</label>
+                                <textarea id="msg_full" name="msg_full" rows="4"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"></textarea>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Instrucciones de
+                                    Reserva</label>
+                                <textarea id="msg_reserva" name="msg_reserva" rows="4"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"
+                                    placeholder="Usa {url} para el link automático"></textarea>
+                                <p class="text-xs text-gray-500 mt-1">Usa `{url}` para que el bot inserte el link de
+                                    reserva automáticamente.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Ubicación</label>
+                                <textarea id="msg_ubicacion" name="msg_ubicacion" rows="4"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Encabezado de Pago</label>
+                                <textarea id="msg_pago_header" name="msg_pago_header" rows="2"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Respuesta por defecto
+                                    (error)</label>
+                                <textarea id="msg_default" name="msg_default" rows="2"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-700 flex justify-end">
+                        <button type="submit"
+                            class="bg-bicisi-primary hover:bg-bicisi-secondary text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-bicisi-primary/20">
+                            <i class="fas fa-save mr-2"></i>Guardar Mensajes del Bot
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal"
+        class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold" id="modalTitle">Nueva Categoría</h3>
+                <button onclick="closeCategoryModal()" class="text-gray-400 hover:text-white"><i
+                        class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="categoryForm" onsubmit="saveCategory(event)">
+                <input type="hidden" id="categoryId">
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Nombre</label>
+                    <input type="text" id="catName" required
+                        class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Descripción</label>
+                    <textarea id="catDesc" rows="2"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"></textarea>
+                </div>
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div><label class="block text-gray-400 mb-2 text-sm">Precio/Día</label><input type="number"
+                            id="catPriceDay" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2"></div>
+                    <div><label class="block text-gray-400 mb-2 text-sm">Precio/½Día</label><input type="number"
+                            id="catPriceHalf" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2"></div>
+                    <div><label class="block text-gray-400 mb-2 text-sm">Precio/Hora</label><input type="number"
+                            id="catPriceHour" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2"></div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Stock</label>
+                    <input type="number" id="catStock" required
+                        class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-400 mb-2">Imagen</label>
+                    <input type="file" id="catImage" accept="image/*"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3">
+                    <input type="hidden" id="catImageUrl">
+                </div>
+                <button type="submit"
+                    class="w-full bg-bicisi-primary text-white py-3 rounded-xl font-bold">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reservation Detail Modal -->
+    <div id="reservationModal"
+        class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl p-6 max-w-lg w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Detalle de Reserva</h3>
+                <button onclick="closeReservationModal()" class="text-gray-400 hover:text-white"><i
+                        class="fas fa-times text-xl"></i></button>
+            </div>
+            <div id="reservationDetail"></div>
+        </div>
+    </div>
+
+    <script>
+        let categories = [];
+        let reservations = [];
+
+        async function init() {
+            await Promise.all([loadStats(), loadCategories(), loadReservations(), loadSettings()]);
+        }
+
+        async function loadSettings() {
+            try {
+                // Load current settings (overrides only)
+                const res = await fetch('/api/admin/settings');
+                if (!res.ok) throw new Error('Error al cargar configuraciones');
+                const data = await res.json();
+
+                // Load default messages (for placeholders)
+                const defRes = await fetch('/api/admin/default-messages');
+                if (!defRes.ok) throw new Error('Error al cargar mensajes por defecto');
+                const defaults = await defRes.json();
+
+                const botFields = ['msg_welcome', 'msg_planes', 'msg_eco', 'msg_full', 'msg_reserva', 'msg_ubicacion', 'msg_pago_header', 'msg_default'];
+                botFields.forEach(field => {
+                    const el = document.getElementById(field);
+                    if (el) {
+                        el.value = data[field] || '';
+                        if (defaults[field]) el.placeholder = defaults[field];
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                alert('Error al cargar: ' + err.message);
+            }
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const settings = {};
+            formData.forEach((value, key) => settings[key] = value);
+
+            try {
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('¡Mensajes del bot actualizados correctamente!');
+                }
+            } catch (err) {
+                alert('Error al guardar: ' + err.message);
+            }
+        }
+
+        async function loadStats() {
+            const res = await fetch('/api/admin/stats');
+            const data = await res.json();
+            document.getElementById('statTotal').textContent = data.total_reservations;
+            document.getElementById('statConfirmed').textContent = data.confirmed;
+            document.getElementById('statPending').textContent = data.pending;
+            document.getElementById('statStock').textContent = data.total_stock;
+        }
+
+        async function loadCategories() {
+            const res = await fetch('/api/admin/categories');
+            categories = await res.json();
+            renderCategories();
+        }
+
+        async function loadReservations() {
+            const res = await fetch('/api/admin/reservations');
+            reservations = await res.json();
+            renderReservations();
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categoriesGrid');
+            grid.innerHTML = categories.map(cat => `
+                <div class="bg-gray-700/50 rounded-2xl overflow-hidden border border-gray-700">
+                    <div class="h-40 bg-gradient-to-br from-bicisi-primary/20 to-bicisi-dark/40 flex items-center justify-center">
+                        ${cat.image && !cat.image.includes('default') ? `<img src="${cat.image}" class="w-full h-full object-cover">` : `<i class="fas fa-bicycle text-5xl text-bicisi-primary/50"></i>`}
+                    </div>
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold">${cat.name}</h3>
+                            <span class="bg-bicisi-primary/20 text-bicisi-primary px-2 py-1 rounded-lg text-sm">${cat.stock} stock</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-4">${cat.description || 'Sin descripción'}</p>
+                        <div class="text-sm text-gray-400 mb-4">
+                            <div class="flex justify-between"><span>Día:</span><span>$${cat.price_full_day.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>½ Día:</span><span>$${cat.price_half_day.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>Hora:</span><span>$${cat.price_per_hour.toLocaleString()}</span></div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editCategory('${cat.id}')" class="flex-1 bg-gray-600 py-2 rounded-lg text-sm"><i class="fas fa-edit mr-1"></i>Editar</button>
+                            <button onclick="deleteCategory('${cat.id}')" class="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderReservations() {
+            const filter = document.getElementById('filterStatus').value;
+            let filtered = reservations;
+            if (filter) filtered = reservations.filter(r => r.status === filter);
+
+            const table = document.getElementById('reservationsTable');
+            const noRes = document.getElementById('noReservations');
+
+            if (filtered.length === 0) {
+                table.innerHTML = '';
+                noRes.classList.remove('hidden');
+                return;
+            }
+            noRes.classList.add('hidden');
+
+            table.innerHTML = filtered.map(res => {
+                const statusColors = { confirmed: 'bg-green-500/20 text-green-400', pending: 'bg-yellow-500/20 text-yellow-400', overridden: 'bg-red-500/20 text-red-400', cancelled: 'bg-gray-500/20 text-gray-400' };
+                const statusLabels = { confirmed: 'Confirmada', pending: 'Pendiente', overridden: 'Sobrescrita', cancelled: 'Cancelada' };
+                const paymentLabels = { transfer: '🏦 Transfer', cash: '💵 Efectivo' };
+                const items = res.items.map(i => `${i.category_name || 'Bici'} x${i.quantity}`).join(', ');
+
+                return `
+                    <tr class="border-t border-gray-700 hover:bg-gray-700/30">
+                        <td class="px-6 py-4">
+                            <div class="font-medium">${res.customer_name}</div>
+                            <div class="text-sm text-gray-400">${res.customer_phone}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm">${items}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm">${new Date(res.start_date).toLocaleDateString('es-AR')}</div>
+                            <div class="text-xs text-gray-400">${res.start_hour}:00 - ${res.end_hour}:00</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm">${paymentLabels[res.payment_method] || res.payment_method}</td>
+                        <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[res.status]}">${statusLabels[res.status]}</span></td>
+                        <td class="px-6 py-4">
+                            <button onclick="viewReservation('${res.id}')" class="text-bicisi-primary hover:underline text-sm mr-2"><i class="fas fa-eye"></i></button>
+                            ${res.status === 'pending' ? `<button onclick="confirmReservation('${res.id}')" class="text-green-400 hover:underline text-sm mr-2"><i class="fas fa-check"></i></button>` : ''}
+                            <button onclick="deleteReservation('${res.id}')" class="text-red-400 hover:underline text-sm"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('tab-active', btn.dataset.tab === tab);
+                btn.classList.toggle('text-gray-400', btn.dataset.tab !== tab);
+            });
+        }
+
+        function openCategoryModal(cat = null) {
+            document.getElementById('modalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
+            document.getElementById('categoryId').value = cat?.id || '';
+            document.getElementById('catName').value = cat?.name || '';
+            document.getElementById('catDesc').value = cat?.description || '';
+            document.getElementById('catPriceDay').value = cat?.price_full_day || '';
+            document.getElementById('catPriceHalf').value = cat?.price_half_day || '';
+            document.getElementById('catPriceHour').value = cat?.price_per_hour || '';
+            document.getElementById('catStock').value = cat?.stock || '';
+            document.getElementById('catImageUrl').value = cat?.image || '';
+            document.getElementById('categoryModal').classList.remove('hidden');
+        }
+
+        function closeCategoryModal() { document.getElementById('categoryModal').classList.add('hidden'); }
+
+        function editCategory(id) {
+            const cat = categories.find(c => c.id === id);
+            if (cat) openCategoryModal(cat);
+        }
+
+        async function saveCategory(e) {
+            e.preventDefault();
+            const id = document.getElementById('categoryId').value;
+            const fileInput = document.getElementById('catImage');
+            let imageUrl = document.getElementById('catImageUrl').value;
+
+            if (fileInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+                const uploadRes = await fetch('/api/admin/upload-image', { method: 'POST', body: formData });
+                const uploadData = await uploadRes.json();
+                if (uploadData.url) imageUrl = uploadData.url;
+            }
+
+            const data = {
+                name: document.getElementById('catName').value,
+                description: document.getElementById('catDesc').value,
+                price_full_day: parseInt(document.getElementById('catPriceDay').value),
+                price_half_day: parseInt(document.getElementById('catPriceHalf').value),
+                price_per_hour: parseInt(document.getElementById('catPriceHour').value),
+                stock: parseInt(document.getElementById('catStock').value),
+                image: imageUrl
+            };
+
+            const url = id ? `/api/admin/categories/${id}` : '/api/admin/categories';
+            const method = id ? 'PUT' : 'POST';
+            await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            closeCategoryModal();
+            loadCategories();
+            loadStats();
+        }
+
+        async function deleteCategory(id) {
+            if (!confirm('¿Eliminar esta categoría?')) return;
+            await fetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
+            loadCategories();
+            loadStats();
+        }
+
+        function viewReservation(id) {
+            const res = reservations.find(r => r.id === id);
+            if (!res) return;
+            const items = res.items.map(i => `<li>${i.category_name || 'Bici'} x${i.quantity}</li>`).join('');
+            const detail = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><span class="text-gray-400 text-sm">Cliente</span><div class="font-bold">${res.customer_name}</div></div>
+                        <div><span class="text-gray-400 text-sm">Teléfono</span><div class="font-bold">${res.customer_phone}</div></div>
+                        <div><span class="text-gray-400 text-sm">Email</span><div>${res.customer_email || '-'}</div></div>
+                        <div><span class="text-gray-400 text-sm">DNI</span><div>${res.customer_dni || '-'}</div></div>
+                    </div>
+                    ${res.dni_photo ? `
+                    <div class="border-t border-gray-700 pt-4">
+                        <span class="text-gray-400 text-sm">Foto DNI</span>
+                        <div class="mt-2 rounded-xl overflow-hidden border border-gray-700">
+                            <img src="${res.dni_photo}" class="w-full h-auto max-h-64 object-contain bg-gray-900" 
+                                 onclick="window.open('${res.dni_photo}', '_blank')" 
+                                 title="Click para ampliar" style="cursor: zoom-in">
+                        </div>
+                    </div>` : ''}
+                    <div class="border-t border-gray-700 pt-4"><span class="text-gray-400 text-sm">Items</span><ul class="list-disc pl-4 mt-2">${items}</ul></div>
+                    <div class="grid grid-cols-2 gap-4 border-t border-gray-700 pt-4">
+                        <div><span class="text-gray-400 text-sm">Fecha</span><div>${new Date(res.start_date).toLocaleDateString('es-AR')}</div></div>
+                        <div><span class="text-gray-400 text-sm">Horario</span><div>${res.start_hour}:00 - ${res.end_hour}:00</div></div>
+                        <div><span class="text-gray-400 text-sm">Retiro</span><div>${res.pickup_location || 'Sucursal'}</div></div>
+                        <div><span class="text-gray-400 text-sm">Devolución</span><div>${res.return_location || 'Sucursal'}</div></div>
+                    </div>
+                    <div class="border-t border-gray-700 pt-4 flex justify-between items-center">
+                        <div><span class="text-gray-400 text-sm">Total</span><div class="text-2xl font-bold text-bicisi-primary">$${(res.total || 0).toLocaleString()}</div></div>
+                        <div class="text-right"><span class="text-gray-400 text-sm">Seña</span><div class="text-lg font-bold text-bicisi-accent">$${(res.deposit || 0).toLocaleString()}</div></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('reservationDetail').innerHTML = detail;
+            document.getElementById('reservationModal').classList.remove('hidden');
+        }
+
+        function closeReservationModal() { document.getElementById('reservationModal').classList.add('hidden'); }
+
+        async function confirmReservation(id) {
+            await fetch(`/api/admin/reservations/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'confirmed' }) });
+            loadReservations();
+            loadStats();
+        }
+
+        async function deleteReservation(id) {
+            if (!confirm('¿Eliminar esta reserva?')) return;
+            await fetch(`/api/admin/reservations/${id}`, { method: 'DELETE' });
+            loadReservations();
+            loadStats();
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

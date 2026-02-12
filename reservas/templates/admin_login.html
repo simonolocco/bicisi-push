@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - BiciSí</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
+                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'accent': '#F59E0B' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div
+                class="w-16 h-16 bg-gradient-to-br from-bicisi-primary to-bicisi-accent rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-bicycle text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white">BiciSí Admin</h1>
+            <p class="text-gray-400 mt-2">Ingresa tus credenciales</p>
+        </div>
+
+        {% if error %}
+        <div class="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-xl mb-6 text-center">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" class="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+            <div class="mb-6">
+                <label class="block text-gray-400 mb-2">Usuario</label>
+                <input type="text" name="username" required
+                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:border-bicisi-primary focus:outline-none">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-400 mb-2">Contraseña</label>
+                <input type="password" name="password" required
+                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:border-bicisi-primary focus:outline-none">
+            </div>
+            <button type="submit"
+                class="w-full bg-gradient-to-r from-bicisi-primary to-bicisi-secondary text-white py-3 rounded-xl font-bold hover:shadow-lg transition-all">
+                Ingresar
+            </button>
+        </form>
+
+        <div class="text-center mt-6">
+            <a href="/" class="text-gray-400 hover:text-bicisi-primary transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Volver al inicio
+            </a>
+        </div>
+    </div>
+</body>
+
+</html>

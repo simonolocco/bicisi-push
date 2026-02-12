@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiciSí - Alquiler de Bicicletas en Villa Carlos Paz</title>
+    <meta name="description"
+        content="Alquila bicicletas en Villa Carlos Paz. Servicio de alquiler de bicicletas de aluminio y acero.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
+                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'light': '#D1FAE5', 'accent': '#F59E0B' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .gradient-hero {
+            background: linear-gradient(135deg, #064E3B 0%, #10B981 50%, #34D399 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .category-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .category-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 40px rgba(16, 185, 129, 0.8);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white overflow-x-hidden">
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 bg-gradient-to-br from-bicisi-primary to-bicisi-accent rounded-xl flex items-center justify-center">
+                        <i class="fas fa-bicycle text-white text-lg"></i>
+                    </div>
+                    <span
+                        class="text-2xl font-bold bg-gradient-to-r from-bicisi-primary to-bicisi-accent bg-clip-text text-transparent">BiciSí</span>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#inicio" class="text-gray-300 hover:text-bicisi-primary transition-colors">Inicio</a>
+                    <a href="#bicicletas"
+                        class="text-gray-300 hover:text-bicisi-primary transition-colors">Bicicletas</a>
+                    <a href="/reserva"
+                        class="bg-gradient-to-r from-bicisi-primary to-bicisi-secondary text-white px-6 py-2 rounded-full font-semibold">Reservar
+                        Ahora</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section id="inicio" class="gradient-hero min-h-screen flex items-center pt-16 relative overflow-hidden">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute top-20 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-20 right-10 w-96 h-96 bg-bicisi-accent/10 rounded-full blur-3xl"></div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <span
+                        class="inline-block bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium mb-6 border border-white/20">🚴
+                        Villa Carlos Paz, Córdoba</span>
+                    <h1 class="text-5xl lg:text-7xl font-extrabold leading-tight mb-6">Explora la ciudad<span
+                            class="block text-bicisi-accent">en dos ruedas</span></h1>
+                    <p class="text-xl text-white/80 mb-8 leading-relaxed">Alquila bicicletas de alta calidad para
+                        disfrutar de Villa Carlos Paz. Servicio todos los días de <strong>8:00 a 19:00 hs</strong>.</p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="/reserva"
+                            class="group bg-white text-bicisi-dark px-8 py-4 rounded-full font-bold text-lg pulse-glow flex items-center gap-3"><span>Reservar
+                                Ahora</span><i
+                                class="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i></a>
+                        <a href="https://wa.me/5493513426691" target="_blank"
+                            class="glass-card text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-3"><i
+                                class="fab fa-whatsapp text-2xl"></i><span>WhatsApp</span></a>
+                    </div>
+                </div>
+                <div class="hidden lg:block relative">
+                    <div class="relative float-animation">
+                        <div
+                            class="w-96 h-96 bg-gradient-to-br from-white/20 to-white/5 rounded-full flex items-center justify-center mx-auto">
+                            <i class="fas fa-bicycle text-white/90 text-[180px]"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="bicicletas" class="py-24 bg-gray-900 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-16">
+                <span
+                    class="inline-block bg-bicisi-primary/20 text-bicisi-primary px-4 py-2 rounded-full text-sm font-medium mb-4">Nuestras
+                    Opciones</span>
+                <h2 class="text-4xl lg:text-5xl font-bold mb-4">Elige tu <span
+                        class="text-bicisi-primary">Bicicleta</span></h2>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {% for category in categories %}
+                <div class="category-card bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 group">
+                    <div
+                        class="h-48 bg-gradient-to-br from-bicisi-primary/20 to-bicisi-dark/40 flex items-center justify-center relative overflow-hidden">
+                        {% if category.image and 'default' not in category.image %}
+                        <img src="{{ category.image }}" alt="{{ category.name }}"
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        {% else %}
+                        <i
+                            class="fas fa-bicycle text-6xl text-bicisi-primary/50 group-hover:scale-110 transition-transform duration-500"></i>
+                        {% endif %}
+                        <div
+                            class="absolute top-4 right-4 bg-bicisi-accent text-white px-3 py-1 rounded-full text-sm font-bold">
+                            {{ category.stock }} disp.</div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2">{{ category.name }}</h3>
+                        <p class="text-gray-400 text-sm mb-4">{{ category.description }}</p>
+                        <div class="space-y-2 mb-4">
+                            <div class="flex justify-between text-sm"><span class="text-gray-500">Día
+                                    completo</span><span class="text-bicisi-primary font-bold">${{
+                                    "{:,.0f}".format(category.price_full_day) }}</span></div>
+                            <div class="flex justify-between text-sm"><span class="text-gray-500">Medio día</span><span
+                                    class="text-bicisi-primary font-bold">${{ "{:,.0f}".format(category.price_half_day)
+                                    }}</span></div>
+                        </div>
+                        <a href="/reserva?category={{ category.id }}"
+                            class="block w-full bg-gradient-to-r from-bicisi-primary to-bicisi-secondary text-white text-center py-3 rounded-xl font-semibold">Reservar</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 border-t border-gray-800 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-bicisi-primary to-bicisi-accent rounded-xl flex items-center justify-center">
+                    <i class="fas fa-bicycle text-white"></i></div>
+                <span class="text-2xl font-bold">BiciSí</span>
+            </div>
+            <p class="text-gray-400 mb-4">Villa Carlos Paz, Córdoba • Todos los días 8:00 - 19:00 hs</p>
+            <a href="https://wa.me/5493513426691" class="text-bicisi-primary hover:underline"><i
+                    class="fab fa-whatsapp"></i> +54 9 3513 42-6691</a>
+            <p class="text-gray-500 mt-8">&copy; 2024 BiciSí. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

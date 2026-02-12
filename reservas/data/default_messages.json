@@ -1,0 +1,10 @@
+{
+    "msg_welcome": "¡Hola! 👋 Gracias por tu interés en *BiciSí*, Servicio de Alquiler de Bicicletas en Villa Carlos Paz 🚲✨\n\n⏰ *Horarios:* Todos los días de 9:00 a 19:00 hs.\nExplora la ciudad de manera cómoda y divertida.\n\n¿En qué te podemos ayudar hoy?",
+    "msg_planes": "Tenemos dos modalidades principales:\n\n🔵 *Modo ECO*: Bicis de Aluminio o Acero. Se retiran y devuelven en nuestra Central. Sin cobertura de asistencia.\n\n🔴 *Modo FULL*: (+$10.000) Incluye entrega y retiro en tu ubicación + Servicio de Asistencia durante el paseo.",
+    "msg_eco": "*Modo ECO* 🌿\n\n👉 Ideal si vienes a buscar la bici.\n✅ Opciones: Bicis Aluminio (Azul) o Acero (Amarillo).\n📍 *Condición:* Retiro y devolución en nuestra Central.\n❌ No incluye asistencia en calle.",
+    "msg_full": "*Modo FULL* 🚀\n\n👉 ¡Relájate, nosotros nos encargamos!\n💵 Costo adicional: +$10.000 pesos.\n✅ *Incluye:* Entrega y retiro donde te encuentres (alojamiento).\n🛠️ *Cobertura:* Asistencia mecánica durante todo el alquiler.",
+    "msg_reserva": "📝 *Reserva Online*\n\nPara gestionar tu reserva de forma rápida, ingresa aquí:\n👉 {url}/reserva \n\n(Completa el formulario y tu reserva quedará agendada)",
+    "msg_ubicacion": "📍 *Nuestra Ubicación Central:*\n\nEstamos listos para recibirte. \nhttps://maps.app.goo.gl/PseNUb16SX2tSZjS9\n¡Te esperamos!",
+    "msg_pago_header": "🏦 *Datos Bancarios para la Seña:*",
+    "msg_default": "No entendí tu mensaje. Por favor selecciona una opción:"
+}
