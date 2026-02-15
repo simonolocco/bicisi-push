@@ -115,4 +115,4 @@ desktop.ini
 
 # Project specific
 reservas/.env
-reservas/bicisi.db
+# reservas/bicisi.db
