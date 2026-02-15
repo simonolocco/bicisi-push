@@ -8,6 +8,8 @@ import hashlib
 from functools import wraps
 import json
 import requests
+import base64
+import io
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
@@ -163,16 +165,71 @@ def init_db():
         default_settings = [
             ('business_name', 'BiciSí'),
             ('address', 'Villa Carlos Paz, Córdoba'),
-            ('phone', '+54 9 3513 42-6691'),
+            ('phone', '+54 9 3541 57-5810'),
             ('delivery_fee', '10000'),
             ('bank_name', 'Banco Francés BBVA'),
             ('bank_account', '274-22784/8'),
             ('bank_cbu', '0170274540000002278483'),
             ('bank_alias', 'BICISI.26'),
-            ('bank_holder', 'Brunazzi Lucas'),
+            ('bank_holder', 'Lucas Brunazzi'),
         ]
         cursor.executemany("INSERT INTO settings (key, value) VALUES (?, ?)", default_settings)
     
+    conn.commit()
+    conn.close()
+    
+    # Run migration for existing images
+    try:
+        migrate_images_to_db()
+    except Exception as e:
+        print(f"Migration error: {e}")
+
+def migrate_images_to_db():
+    """Migrate existing file-based images to base64 in the database"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 1. Categories
+    cursor.execute("SELECT id, image FROM categories WHERE image LIKE '/static/%'")
+    categories = cursor.fetchall()
+    
+    for cat in categories:
+        local_path = cat['image']
+        # Convert /static/ to the actual static folder path
+        rel_path = local_path.lstrip('/')
+        # Use a safe join, assuming relative paths from project root or static folder
+        # In this project, app.py is in /reservas/, and static is there too.
+        full_path = os.path.join(os.path.dirname(__file__), rel_path)
+        
+        if os.path.exists(full_path):
+            with open(full_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                ext = local_path.rsplit('.', 1)[-1].lower()
+                mime_type = f"image/{'jpeg' if ext == 'jpg' else ext}"
+                data_uri = f"data:{mime_type};base64,{encoded_string}"
+                
+                cursor.execute("UPDATE categories SET image = ? WHERE id = ?", (data_uri, cat['id']))
+                print(f"Migrated category image: {cat['id']}")
+
+    # 2. Reservations (DNI photos)
+    cursor.execute("SELECT id, dni_photo FROM reservations WHERE dni_photo LIKE '/static/%'")
+    reservations = cursor.fetchall()
+    
+    for res in reservations:
+        local_path = res['dni_photo']
+        rel_path = local_path.lstrip('/')
+        full_path = os.path.join(os.path.dirname(__file__), rel_path)
+        
+        if os.path.exists(full_path):
+            with open(full_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                ext = local_path.rsplit('.', 1)[-1].lower()
+                mime_type = f"image/{'jpeg' if ext == 'jpg' else ext}"
+                data_uri = f"data:{mime_type};base64,{encoded_string}"
+                
+                cursor.execute("UPDATE reservations SET dni_photo = ? WHERE id = ?", (data_uri, res['id']))
+                print(f"Migrated reservation DNI photo: {res['id']}")
+                
     conn.commit()
     conn.close()
 
@@ -474,7 +531,7 @@ def create_reservation():
 
 @app.route('/api/upload-dni', methods=['POST'])
 def upload_dni_photo():
-    """Public endpoint to upload DNI photo for reservation"""
+    """Public endpoint to upload DNI photo and return as base64 data URI"""
     if 'image' not in request.files:
         return jsonify({"error": "No se proporcionó imagen"}), 400
     
@@ -482,18 +539,18 @@ def upload_dni_photo():
     if file.filename == '':
         return jsonify({"error": "No se seleccionó archivo"}), 400
     
-    images_dir = os.path.join(app.static_folder, 'images', 'dni')
-    os.makedirs(images_dir, exist_ok=True)
-    
+    # Check extension
     ext = file.filename.rsplit('.', 1)[-1].lower()
     if ext not in ['jpg', 'jpeg', 'png', 'webp']:
         return jsonify({"error": "Formato de imagen no válido"}), 400
     
-    filename = f"dni_{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(images_dir, filename)
-    file.save(filepath)
+    # Read file and convert to base64
+    image_data = file.read()
+    base64_encoded = base64.b64encode(image_data).decode('utf-8')
+    mime_type = f"image/{'jpeg' if ext == 'jpg' else ext}"
+    data_uri = f"data:{mime_type};base64,{base64_encoded}"
     
-    return jsonify({"success": True, "url": f"/static/images/dni/{filename}"})
+    return jsonify({"success": True, "url": data_uri})
 
 # ==================== ADMIN ROUTES ====================
 
@@ -672,7 +729,7 @@ def admin_reservation_detail(reservation_id):
 @app.route('/api/admin/upload-image', methods=['POST'])
 @login_required
 def upload_image():
-    """Upload category image"""
+    """Upload category image and return as base64 data URI"""
     if 'image' not in request.files:
         return jsonify({"error": "No image provided"}), 400
     
@@ -680,15 +737,18 @@ def upload_image():
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
     
-    images_dir = os.path.join(app.static_folder, 'images')
-    os.makedirs(images_dir, exist_ok=True)
-    
+    # Check extension
     ext = file.filename.rsplit('.', 1)[-1].lower()
-    filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(images_dir, filename)
-    file.save(filepath)
+    if ext not in ['jpg', 'jpeg', 'png', 'webp']:
+        return jsonify({"error": "Formato de imagen no válido"}), 400
     
-    return jsonify({"success": True, "url": f"/static/images/{filename}"})
+    # Read file and convert to base64
+    image_data = file.read()
+    base64_encoded = base64.b64encode(image_data).decode('utf-8')
+    mime_type = f"image/{'jpeg' if ext == 'jpg' else ext}"
+    data_uri = f"data:{mime_type};base64,{base64_encoded}"
+    
+    return jsonify({"success": True, "url": data_uri})
 
 @app.route('/api/admin/stats')
 @login_required
