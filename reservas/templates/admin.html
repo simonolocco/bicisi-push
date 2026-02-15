@@ -13,7 +13,7 @@
             theme: {
                 extend: {
                     fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
-                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'accent': '#F59E0B' } }
+                    colors: { 'bicisi': { 'primary': '#43E2F7', 'secondary': '#73A3FA', 'dark': '#67787A', 'accent': '#FACF73' } }
                 }
             }
         }
@@ -24,15 +24,22 @@
         }
 
         .tab-active {
-            border-bottom: 2px solid #10B981;
-            color: #10B981;
+            border-bottom: 2px solid #43E2F7;
+            color: #43E2F7;
+        }
+
+        body {
+            background-image: linear-gradient(rgba(17, 24, 39, 0.95), rgba(17, 24, 39, 0.95)), url('/static/carlospaz.png');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
         }
     </style>
 </head>
 
-<body class="bg-gray-900 text-white min-h-screen">
+<body class="text-white min-h-screen font-outfit">
     <!-- Header -->
-    <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+    <header class="bg-black/40 backdrop-blur-md border-b border-gray-700 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div

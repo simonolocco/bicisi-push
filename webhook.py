@@ -176,7 +176,7 @@ def handle_incoming_message(sender, message_body, message_type):
         text = (
             "🏦 *Datos Bancarios para la Seña:*\n\n"
             "🔹 *Banco:* Francés BBVA\n"
-            "🔹 *Titular:* Brunazzi Lucas\n"
+            "🔹 *Titular:* Lucas Brunazzi\n"
             "🔹 *Alias:* BICISI.26\n"
             "🔹 *CBU:* 0170274540000002278483\n"
             "🔹 *Cuenta:* 274-22784/8\n\n"

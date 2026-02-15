@@ -13,19 +13,22 @@
             theme: {
                 extend: {
                     fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
-                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'accent': '#F59E0B' } }
+                    colors: { 'bicisi': { 'primary': '#43E2F7', 'secondary': '#73A3FA', 'dark': '#67787A', 'accent': '#FACF73' } }
                 }
             }
         }
     </script>
     <style>
-        * {
-            font-family: 'Outfit', sans-serif;
+        body {
+            background-image: linear-gradient(rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.9)), url('/static/carlospaz.png');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
         }
     </style>
 </head>
 
-<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 font-outfit">
     <div class="w-full max-w-md">
         <div class="text-center mb-8">
             <div

@@ -1,13 +1,13 @@
 {
   "business_name": "BiciSí",
   "address": "Villa Carlos Paz, Córdoba",
-  "phone": "+54 9 3513 42-6691",
+  "phone": "+54 9 3541 57-5810",
   "bank_info": {
     "bank": "Banco Francés BBVA",
     "account": "274-22784/8",
     "cbu": "0170274540000002278483",
     "alias": "BICISI.26",
-    "holder": "Brunazzi Lucas"
+    "holder": "Lucas Brunazzi"
   },
   "delivery_fee": 10000
 }

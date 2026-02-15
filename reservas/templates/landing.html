@@ -16,7 +16,7 @@
             theme: {
                 extend: {
                     fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
-                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'light': '#D1FAE5', 'accent': '#F59E0B' } }
+                    colors: { 'bicisi': { 'primary': '#43E2F7', 'secondary': '#73A3FA', 'dark': '#67787A', 'light': '#FAEA73', 'accent': '#FACF73' } }
                 }
             }
         }
@@ -27,7 +27,14 @@
         }
 
         .gradient-hero {
-            background: linear-gradient(135deg, #064E3B 0%, #10B981 50%, #34D399 100%);
+            background: linear-gradient(135deg, rgba(103, 120, 122, 0.9) 0%, rgba(67, 226, 247, 0.4) 50%, rgba(115, 163, 250, 0.2) 100%);
+        }
+
+        body {
+            background-image: linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.8)), url('/static/carlospaz.png');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
         }
 
         .glass-card {
@@ -69,17 +76,17 @@
 
             0%,
             100% {
-                box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+                box-shadow: 0 0 20px rgba(67, 226, 247, 0.4);
             }
 
             50% {
-                box-shadow: 0 0 40px rgba(16, 185, 129, 0.8);
+                box-shadow: 0 0 40px rgba(115, 163, 250, 0.6);
             }
         }
     </style>
 </head>
 
-<body class="bg-gray-900 text-white overflow-x-hidden">
+<body class="bg-gray-900 text-white overflow-x-hidden font-outfit">
     <nav class="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -123,7 +130,7 @@
                             class="group bg-white text-bicisi-dark px-8 py-4 rounded-full font-bold text-lg pulse-glow flex items-center gap-3"><span>Reservar
                                 Ahora</span><i
                                 class="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i></a>
-                        <a href="https://wa.me/5493513426691" target="_blank"
+                        <a href="https://wa.me/5493541575810" target="_blank"
                             class="glass-card text-white px-8 py-4 rounded-full font-bold text-lg flex items-center gap-3"><i
                                 class="fab fa-whatsapp text-2xl"></i><span>WhatsApp</span></a>
                     </div>
@@ -132,14 +139,15 @@
                     <div class="relative float-animation">
                         <div
                             class="w-96 h-96 bg-gradient-to-br from-white/20 to-white/5 rounded-full flex items-center justify-center mx-auto">
-                            <i class="fas fa-bicycle text-white/90 text-[180px]"></i></div>
+                            <i class="fas fa-bicycle text-white/90 text-[180px]"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="bicicletas" class="py-24 bg-gray-900 relative">
+    <section id="bicicletas" class="py-24 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-16">
                 <span
@@ -184,18 +192,19 @@
         </div>
     </section>
 
-    <footer class="bg-gray-900 border-t border-gray-800 py-12">
+    <footer class="border-t border-gray-800 py-12 backdrop-blur-md bg-black/20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="flex items-center justify-center gap-3 mb-4">
                 <div
                     class="w-10 h-10 bg-gradient-to-br from-bicisi-primary to-bicisi-accent rounded-xl flex items-center justify-center">
-                    <i class="fas fa-bicycle text-white"></i></div>
+                    <i class="fas fa-bicycle text-white"></i>
+                </div>
                 <span class="text-2xl font-bold">BiciSí</span>
             </div>
             <p class="text-gray-400 mb-4">Villa Carlos Paz, Córdoba • Todos los días 8:00 - 19:00 hs</p>
-            <a href="https://wa.me/5493513426691" class="text-bicisi-primary hover:underline"><i
-                    class="fab fa-whatsapp"></i> +54 9 3513 42-6691</a>
-            <p class="text-gray-500 mt-8">&copy; 2024 BiciSí. Todos los derechos reservados.</p>
+            <a href="https://wa.me/5493541575810" class="text-bicisi-primary hover:underline"><i
+                    class="fab fa-whatsapp"></i> +54 9 3541 57-5810</a>
+            <p class="text-gray-500 mt-8">&copy; 2026 Lucas Brunazzi. Todos los derechos reservados.</p>
         </div>
     </footer>
 </body>

@@ -14,7 +14,7 @@
             theme: {
                 extend: {
                     fontFamily: { 'outfit': ['Outfit', 'sans-serif'] },
-                    colors: { 'bicisi': { 'primary': '#10B981', 'secondary': '#059669', 'dark': '#064E3B', 'light': '#D1FAE5', 'accent': '#F59E0B' } }
+                    colors: { 'bicisi': { 'primary': '#43E2F7', 'secondary': '#73A3FA', 'dark': '#67787A', 'light': '#FAEA73', 'accent': '#FACF73' } }
                 }
             }
         }
@@ -25,13 +25,20 @@
         }
 
         .step-active {
-            border-color: #10B981;
-            background: rgba(16, 185, 129, 0.1);
+            border-color: #43E2F7;
+            background: rgba(67, 226, 247, 0.1);
         }
 
         .step-completed {
-            border-color: #10B981;
-            background: #10B981;
+            border-color: #43E2F7;
+            background: #43E2F7;
+        }
+
+        body {
+            background-image: linear-gradient(rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.9)), url('/static/carlospaz.png');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
         }
 
         .hour-btn:disabled {
@@ -40,14 +47,14 @@
         }
 
         .hour-btn.selected {
-            background: #10B981;
+            background: #43E2F7;
             color: white;
         }
     </style>
 </head>
 
-<body class="bg-gray-900 text-white min-h-screen">
-    <nav class="bg-gray-900/80 backdrop-blur-lg border-b border-gray-800 sticky top-0 z-50">
+<body class="text-white min-h-screen font-outfit">
+    <nav class="bg-black/40 backdrop-blur-lg border-b border-gray-800 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <a href="/" class="flex items-center gap-3">
                 <div
@@ -56,7 +63,7 @@
                 </div>
                 <span class="text-xl font-bold">BiciSí</span>
             </a>
-            <a href="https://wa.me/5493513426691" class="text-bicisi-primary hover:underline flex items-center gap-2">
+            <a href="https://wa.me/5493541575810" class="text-bicisi-primary hover:underline flex items-center gap-2">
                 <i class="fab fa-whatsapp"></i> Ayuda
             </a>
         </div>
@@ -289,7 +296,7 @@
                     <p><strong>Cuenta:</strong> 274-22784/8</p>
                     <p><strong>CBU:</strong> 0170274540000002278483</p>
                     <p><strong>Alias:</strong> BICISI.26</p>
-                    <p><strong>Titular:</strong> Brunazzi Lucas</p>
+                    <p><strong>Titular:</strong> Lucas Brunazzi</p>
                 </div>
                 <p class="text-bicisi-accent mt-4 text-sm"><i class="fas fa-info-circle mr-1"></i> Enviá el comprobante
                     por WhatsApp para confirmar</p>
@@ -311,7 +318,7 @@
                         class="fas fa-check text-white text-4xl"></i></div>
                 <h3 class="text-2xl font-bold mb-4">¡Reserva Creada!</h3>
                 <p class="text-gray-400 mb-6" id="successMessage"></p>
-                <a href="https://wa.me/5493513426691"
+                <a href="https://wa.me/5493541575810"
                     class="inline-block bg-green-600 text-white px-6 py-3 rounded-xl font-bold mb-4"><i
                         class="fab fa-whatsapp mr-2"></i>Enviar comprobante</a>
                 <br><a href="/" class="text-bicisi-primary hover:underline">Volver al inicio</a>

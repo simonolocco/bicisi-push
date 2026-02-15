@@ -898,7 +898,7 @@ def handle_wa_message(sender, message_body, message_type):
         text = (
             f"{header}\n\n"
             f"🔹 *Banco:* {settings.get('bank_name', 'Francés BBVA')}\n"
-            f"🔹 *Titular:* {settings.get('bank_holder', 'Brunazzi Lucas')}\n"
+            f"🔹 *Titular:* {settings.get('bank_holder', 'Lucas Brunazzi')}\n"
             f"🔹 *Alias:* {settings.get('bank_alias', 'BICISI.26')}\n"
             f"🔹 *CBU:* {settings.get('bank_cbu', '0170274540000002278483')}\n"
             f"🔹 *Cuenta:* {settings.get('bank_account', '274-22784/8')}\n\n"
