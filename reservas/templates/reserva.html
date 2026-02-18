@@ -262,8 +262,10 @@
                     <label class="block"><span class="text-gray-400 mb-2 block">Email</span><input type="email"
                             id="customerEmail"
                             class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"></label>
-                    <label class="block"><span class="text-gray-400 mb-2 block">Número de DNI *</span><input type="text"
-                            id="customerDni" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                    <label class="block"><span class="text-gray-400 mb-2 block">Número de DNI (sin puntos)
+                            *</span><input type="text" id="customerDni"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ej: 12345678"
                             required></label>
                 </div>
 

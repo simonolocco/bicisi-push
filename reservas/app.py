@@ -470,6 +470,10 @@ def create_reservation():
     for field in required:
         if not data.get(field):
             return jsonify({"error": f"Campo requerido: {field}"}), 400
+            
+    # Sanitize DNI (remove dots, hyphens, spaces)
+    if 'customer_dni' in data:
+        data['customer_dni'] = ''.join(filter(str.isdigit, str(data['customer_dni'])))
     
     conn = get_db()
     cursor = conn.cursor()
@@ -591,7 +595,12 @@ def create_reservation():
             if "init_point" not in preference:
                 raise Exception(f"MP Error: {json.dumps(preference)}")
                 
-            init_point = preference["init_point"]
+            # Use sandbox_init_point if using TEST credentials
+            if CONFIG['MP_ACCESS_TOKEN'].startswith('TEST'):
+                init_point = preference.get("sandbox_init_point", preference["init_point"])
+            else:
+                init_point = preference["init_point"]
+                
         except Exception as e:
             print(f"Error creating MP preference: {e}")
             return jsonify({"error": f"Error creating payment preference: {str(e)}"}), 500
