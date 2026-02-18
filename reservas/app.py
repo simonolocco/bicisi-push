@@ -1099,7 +1099,7 @@ def wa_receive():
 @app.route('/api/reservations/<reservation_id>/confirm_payment', methods=['POST'])
 def confirm_reservation_payment(reservation_id):
     print(f"DEBUG: Attempting to confirm payment for reservation {reservation_id}", flush=True)
-    conn = get_db_connection()
+    conn = get_db()
     cursor = conn.cursor()
     
     try:
