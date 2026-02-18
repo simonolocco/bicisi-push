@@ -572,9 +572,9 @@ def create_reservation():
                 }
             },
             "back_urls": {
-                "success": f"{CONFIG['PUBLIC_URL']}/reserva?status=success&reservation_id={reservation_id}",
-                "failure": f"{CONFIG['PUBLIC_URL']}/reserva?status=failure&reservation_id={reservation_id}",
-                "pending": f"{CONFIG['PUBLIC_URL']}/reserva?status=pending&reservation_id={reservation_id}"
+                "success": f"https://bicisi.com.ar/reserva?status=success&reservation_id={reservation_id}",
+                "failure": f"https://bicisi.com.ar/reserva?status=failure&reservation_id={reservation_id}",
+                "pending": f"https://bicisi.com.ar/reserva?status=pending&reservation_id={reservation_id}"
             },
             "auto_return": "approved", # Descomentar en producción (requiere HTTPS/dominio real)
             "external_reference": reservation_id,
@@ -582,8 +582,8 @@ def create_reservation():
         }
         
         try:
-            print(f"DEBUG: Creating MP preference with data: {json.dumps(preference_data, indent=2)}")
-            print(f"DEBUG: PUBLIC_URL is: {CONFIG['PUBLIC_URL']}")
+            print(f"DEBUG: Creating MP preference with data: {json.dumps(preference_data, indent=2)}", flush=True)
+            print(f"DEBUG: PUBLIC_URL (hardcoded check) is: https://bicisi.com.ar", flush=True)
             
             preference_response = sdk.preference().create(preference_data)
             preference = preference_response["response"]
