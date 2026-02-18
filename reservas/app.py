@@ -584,6 +584,10 @@ def create_reservation():
         try:
             preference_response = sdk.preference().create(preference_data)
             preference = preference_response["response"]
+            
+            if "init_point" not in preference:
+                raise Exception(f"MP Error: {json.dumps(preference)}")
+                
             init_point = preference["init_point"]
         except Exception as e:
             print(f"Error creating MP preference: {e}")
