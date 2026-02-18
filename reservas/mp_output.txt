@@ -1,0 +1,18 @@
+Attempting to create preference...
+Response status: 400
+Response body: {
+  "status": 400,
+  "response": {
+    "message": "auto_return invalid. back_url.success must be defined",
+    "error": "invalid_auto_return",
+    "status": 400,
+    "cause": null
+  }
+}
+FAILED to get init_point
+Error cause: {
+  "message": "auto_return invalid. back_url.success must be defined",
+  "error": "invalid_auto_return",
+  "status": 400,
+  "cause": null
+}

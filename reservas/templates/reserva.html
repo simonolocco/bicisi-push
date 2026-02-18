@@ -174,23 +174,27 @@
         <div id="stepContent3" class="step-content hidden">
             <h2 class="text-3xl font-bold mb-6 text-center">Método de Pago</h2>
             <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- Modo FULL: Mercado Pago + Transferencia -->
                 <div class="payment-option bg-gray-800 rounded-2xl p-6 border-2 border-transparent cursor-pointer hover:border-bicisi-primary transition-all"
-                    onclick="selectPayment('transfer')">
+                    onclick="selectPayment('mercadopago')">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="w-14 h-14 bg-bicisi-primary/20 rounded-xl flex items-center justify-center"><i
-                                class="fas fa-university text-bicisi-primary text-2xl"></i></div>
+                        <div class="w-14 h-14 bg-bicisi-primary/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-credit-card text-bicisi-primary text-2xl"></i>
+                        </div>
                         <div>
-                            <h3 class="font-bold text-lg">Transferencia</h3><span
-                                class="text-bicisi-primary text-sm">Modo FULL</span>
+                            <h3 class="font-bold text-lg">Pago Online</h3>
+                            <span class="text-bicisi-primary text-sm">Modo FULL</span>
                         </div>
                     </div>
                     <ul class="text-sm text-gray-400 space-y-2">
-                        <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Seña del 50% para confirmar</li>
+                        <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Mercado Pago, Tarjetas, Rapipago</li>
                         <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Elegí ubicación de entrega</li>
                         <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Elegí ubicación de retiro</li>
                         <li><i class="fas fa-check text-bicisi-primary mr-2"></i>Reserva confirmada al instante</li>
                     </ul>
                 </div>
+
+                <!-- Modo ECO: Efectivo -->
                 <div class="payment-option bg-gray-800 rounded-2xl p-6 border-2 border-transparent cursor-pointer hover:border-bicisi-accent transition-all"
                     onclick="selectPayment('cash')">
                     <div class="flex items-center gap-4 mb-4">
@@ -467,7 +471,7 @@
         function selectPayment(method) {
             selectedPayment = method;
             document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('border-bicisi-primary', 'border-bicisi-accent'));
-            if (method === 'transfer') {
+            if (method === 'mercadopago') {
                 document.querySelector('.payment-option:first-child').classList.add('border-bicisi-primary');
                 document.getElementById('locationInputs').classList.remove('hidden');
             } else {
@@ -528,8 +532,8 @@
 
             document.getElementById('totalPrice').textContent = `$${data.total.toLocaleString()}`;
             document.getElementById('depositPrice').textContent = `$${data.deposit.toLocaleString()}`;
-            document.getElementById('depositRow').classList.toggle('hidden', selectedPayment !== 'transfer');
-            document.getElementById('bankInfo').classList.toggle('hidden', selectedPayment !== 'transfer');
+            document.getElementById('depositRow').classList.toggle('hidden', selectedPayment !== 'mercadopago');
+            document.getElementById('bankInfo').classList.toggle('hidden', true); // Hide bank info as we use MP now
         }
 
         async function handleDniUpload(event) {
@@ -611,8 +615,8 @@
                 customer_dni: dni,
                 dni_photo: dniPhotoUrl,
                 payment_method: selectedPayment,
-                pickup_location: selectedPayment === 'transfer' ? document.getElementById('pickupLocation').value : 'sucursal',
-                return_location: selectedPayment === 'transfer' ? document.getElementById('returnLocation').value : 'sucursal',
+                pickup_location: selectedPayment === 'mercadopago' ? document.getElementById('pickupLocation').value : 'sucursal',
+                return_location: selectedPayment === 'mercadopago' ? document.getElementById('returnLocation').value : 'sucursal',
                 total: calculatedTotal,
                 deposit: calculatedDeposit
             };
@@ -625,14 +629,43 @@
             const data = await res.json();
 
             if (data.success) {
-                document.getElementById('successMessage').textContent = selectedPayment === 'transfer'
-                    ? 'Tu reserva está confirmada. Envía el comprobante de transferencia por WhatsApp.'
+                if (data.init_point) {
+                    window.location.href = data.init_point;
+                    return;
+                }
+
+                document.getElementById('successMessage').textContent = selectedPayment === 'mercadopago'
+                    ? 'Tu reserva está confirmada. Redirigiendo al pago...'
                     : 'Tu reserva está pendiente. Presentate en sucursal para confirmar.';
                 document.getElementById('successModal').classList.remove('hidden');
             } else {
                 alert(data.error || 'Error al crear la reserva');
             }
         }
+
+        async function checkPaymentStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+            const collectionStatus = urlParams.get('collection_status');
+            const reservationId = urlParams.get('reservation_id') || urlParams.get('external_reference');
+
+            if ((status === 'success' || collectionStatus === 'approved') && reservationId) {
+                try {
+                    const res = await fetch(`/api/reservations/${reservationId}/confirm_payment`, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        document.getElementById('successMessage').textContent = '¡Pago recibido! Tu reserva ha sido confirmada exitosamente.';
+                        document.getElementById('successModal').classList.remove('hidden');
+                        // Optional: Clean URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                } catch (e) {
+                    console.error('Error confirming payment:', e);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', checkPaymentStatus);
 
         init();
     </script>

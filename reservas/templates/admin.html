@@ -419,9 +419,9 @@
             noRes.classList.add('hidden');
 
             table.innerHTML = filtered.map(res => {
-                const statusColors = { confirmed: 'bg-green-500/20 text-green-400', pending: 'bg-yellow-500/20 text-yellow-400', overridden: 'bg-red-500/20 text-red-400', cancelled: 'bg-gray-500/20 text-gray-400' };
-                const statusLabels = { confirmed: 'Confirmada', pending: 'Pendiente', overridden: 'Sobrescrita', cancelled: 'Cancelada' };
-                const paymentLabels = { transfer: '🏦 Transfer', cash: '💵 Efectivo' };
+                const statusColors = { confirmed: 'bg-green-500/20 text-green-400', pending: 'bg-yellow-500/20 text-yellow-400', pending_payment: 'bg-blue-500/20 text-blue-400', overridden: 'bg-red-500/20 text-red-400', cancelled: 'bg-gray-500/20 text-gray-400' };
+                const statusLabels = { confirmed: 'Confirmada', pending: 'Pendiente', pending_payment: 'Pendiente Pag', overridden: 'Sobrescrita', cancelled: 'Cancelada' };
+                const paymentLabels = { transfer: '🏦 Transfer', cash: '💵 Efectivo', mercadopago: '💳 Mercado Pago' };
                 const items = res.items.map(i => `${i.category_name || 'Bici'} x${i.quantity}`).join(', ');
 
                 return `
@@ -436,10 +436,10 @@
                             <div class="text-xs text-gray-400">${res.start_hour}:00 - ${res.end_hour}:00</div>
                         </td>
                         <td class="px-6 py-4 text-sm">${paymentLabels[res.payment_method] || res.payment_method}</td>
-                        <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[res.status]}">${statusLabels[res.status]}</span></td>
+                        <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-medium ${statusColors[res.status] || 'bg-gray-500/20 text-gray-400'}">${statusLabels[res.status] || res.status}</span></td>
                         <td class="px-6 py-4">
                             <button onclick="viewReservation('${res.id}')" class="text-bicisi-primary hover:underline text-sm mr-2"><i class="fas fa-eye"></i></button>
-                            ${res.status === 'pending' ? `<button onclick="confirmReservation('${res.id}')" class="text-green-400 hover:underline text-sm mr-2"><i class="fas fa-check"></i></button>` : ''}
+                            ${(res.status === 'pending' || res.status === 'pending_payment') ? `<button onclick="confirmReservation('${res.id}')" class="text-green-400 hover:underline text-sm mr-2"><i class="fas fa-check"></i></button>` : ''}
                             <button onclick="deleteReservation('${res.id}')" class="text-red-400 hover:underline text-sm"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>

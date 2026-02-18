@@ -10,6 +10,7 @@ import json
 import requests
 import base64
 import io
+import mercadopago
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
@@ -19,12 +20,14 @@ def load_config():
     config = {
         "PORT": 5001,
         "DEBUG": True,
-        "PUBLIC_URL": "http://localhost:5001",
+        "PUBLIC_URL": "https://bicisi.com.ar",
         "WA_TOKEN": "",
         "WA_PHONE_ID": "",
         "WA_VERIFY_TOKEN": "javier",
         "WA_VERSION": "v19.0",
-        "SECRET_KEY": "bicisi-secret-key-2024"
+        "SECRET_KEY": "bicisi-secret-key-2024",
+        "MP_ACCESS_TOKEN": "TEST-4089125859574058-021718-384a315e4f5076feb41079180109d5fd-1471579186",
+        "MP_PUBLIC_KEY": "TEST-82eee22b-5985-4884-bfce-d31ac77f608a"
     }
     
     env_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -48,6 +51,9 @@ WA_TOKEN = CONFIG['WA_TOKEN']
 WA_PHONE_ID = CONFIG['WA_PHONE_ID']
 WA_VERIFY_TOKEN = CONFIG['WA_VERIFY_TOKEN']
 WA_VERSION = CONFIG['WA_VERSION']
+
+# Initialize Mercado Pago SDK
+sdk = mercadopago.SDK(CONFIG['MP_ACCESS_TOKEN'])
 
 # Database path
 DB_PATH = os.path.join(os.path.dirname(__file__), 'bicisi.db')
@@ -509,24 +515,85 @@ def create_reservation():
         data.get('return_location', 'sucursal'),
         data.get('total', 0),
         data.get('deposit', 0),
-        'confirmed' if data.get('payment_method') == 'transfer' else 'pending',
+        'confirmed' if data.get('payment_method') == 'transfer' else ('pending_payment' if data.get('payment_method') == 'mercadopago' else 'pending'),
         data.get('notes', '')
     ))
     
     # Add reservation items
+    preference_items = []
     for item in data.get('items', []):
         cursor.execute('''
             INSERT INTO reservation_items (reservation_id, category_id, quantity)
             VALUES (?, ?, ?)
         ''', (reservation_id, item['category_id'], item.get('quantity', 1)))
-    
+        
+        # Get category details for MP preference
+        if data.get('payment_method') == 'mercadopago':
+            cursor.execute("SELECT name, price_full_day, price_half_day, price_per_hour FROM categories WHERE id = ?", (item['category_id'],))
+            cat = cursor.fetchone()
+            if cat:
+                unit_price = 0
+                rental_type = data.get('rental_type')
+                if rental_type == 'full_day': unit_price = cat['price_full_day']
+                elif rental_type == 'half_day': unit_price = cat['price_half_day']
+                elif rental_type == 'hours': 
+                    hours = data.get('end_hour', OPERATING_END) - data.get('start_hour', OPERATING_START)
+                    unit_price = cat['price_per_hour'] * hours
+                else: unit_price = cat['price_full_day'] # Fallback
+                
+                # Charge only 50% (Deposit)
+                deposit_price = unit_price * 0.5
+                
+                preference_items.append({
+                    "title": f"Seña (50%) - {cat['name']}",
+                    "quantity": item.get('quantity', 1),
+                    "unit_price": float(deposit_price),
+                    "currency_id": "ARS"
+                })
+
     conn.commit()
     conn.close()
+    
+    # Create Mercado Pago Preference if applicable
+    init_point = None
+    if data.get('payment_method') == 'mercadopago' and preference_items:
+        preference_data = {
+            "items": preference_items,
+            "payer": {
+                "name": data.get('customer_name'),
+                "email": data.get('customer_email', 'test_user@test.com'),
+                "phone": {
+                    "area_code": "",
+                    "number": data.get('customer_phone')
+                },
+                "identification": {
+                    "type": "DNI",
+                    "number": data.get('customer_dni')
+                }
+            },
+            "back_urls": {
+                "success": f"{CONFIG['PUBLIC_URL']}/reserva?status=success&reservation_id={reservation_id}",
+                "failure": f"{CONFIG['PUBLIC_URL']}/reserva?status=failure&reservation_id={reservation_id}",
+                "pending": f"{CONFIG['PUBLIC_URL']}/reserva?status=pending&reservation_id={reservation_id}"
+            },
+            "auto_return": "approved", # Descomentar en producción (requiere HTTPS/dominio real)
+            "external_reference": reservation_id,
+            "statement_descriptor": "BICISI RESERVA"
+        }
+        
+        try:
+            preference_response = sdk.preference().create(preference_data)
+            preference = preference_response["response"]
+            init_point = preference["init_point"]
+        except Exception as e:
+            print(f"Error creating MP preference: {e}")
+            return jsonify({"error": "Error creating payment preference"}), 500
     
     return jsonify({
         "success": True,
         "reservation_id": reservation_id,
-        "message": "Reserva creada exitosamente"
+        "message": "Reserva creada exitosamente",
+        "init_point": init_point
     })
 
 @app.route('/api/upload-dni', methods=['POST'])
@@ -1012,6 +1079,20 @@ def wa_receive():
         return jsonify(status="error"), 400
 
 # ==================== MAIN ====================
+
+@app.route('/api/reservations/<reservation_id>/confirm_payment', methods=['POST'])
+def confirm_reservation_payment(reservation_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('UPDATE reservations SET status = ? WHERE id = ?', ('confirmed', reservation_id))
+        conn.commit()
+        return jsonify({"success": True, "message": "Pago confirmado exitosamente"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     init_db()
