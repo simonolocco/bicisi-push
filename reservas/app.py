@@ -582,6 +582,9 @@ def create_reservation():
         }
         
         try:
+            print(f"DEBUG: Creating MP preference with data: {json.dumps(preference_data, indent=2)}")
+            print(f"DEBUG: PUBLIC_URL is: {CONFIG['PUBLIC_URL']}")
+            
             preference_response = sdk.preference().create(preference_data)
             preference = preference_response["response"]
             
