@@ -1089,14 +1089,17 @@ def wa_receive():
 
 @app.route('/api/reservations/<reservation_id>/confirm_payment', methods=['POST'])
 def confirm_reservation_payment(reservation_id):
+    print(f"DEBUG: Attempting to confirm payment for reservation {reservation_id}", flush=True)
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
         cursor.execute('UPDATE reservations SET status = ? WHERE id = ?', ('confirmed', reservation_id))
         conn.commit()
+        print(f"DEBUG: Successfully confirmed reservation {reservation_id}", flush=True)
         return jsonify({"success": True, "message": "Pago confirmado exitosamente"})
     except Exception as e:
+        print(f"DEBUG: Error confirming reservation {reservation_id}: {e}", flush=True)
         return jsonify({"error": str(e)}), 500
     finally:
         conn.close()

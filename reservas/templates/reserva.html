@@ -650,6 +650,9 @@
             const reservationId = urlParams.get('reservation_id') || urlParams.get('external_reference');
 
             if ((status === 'success' || collectionStatus === 'approved') && reservationId) {
+                // DEBUG: Alert to confirm script is running
+                alert(`Pago detectado para reserva ${reservationId}. Intentando confirmar...`);
+
                 try {
                     const res = await fetch(`/api/reservations/${reservationId}/confirm_payment`, { method: 'POST' });
                     const data = await res.json();

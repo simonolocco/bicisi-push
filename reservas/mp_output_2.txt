@@ -15,14 +15,14 @@ Response body: {
     "collector_id": 1471579186,
     "coupon_code": null,
     "coupon_labels": null,
-    "date_created": "2026-02-17T18:53:52.363-04:00",
+    "date_created": "2026-02-18T16:34:16.829-04:00",
     "date_of_expiration": null,
     "expiration_date_from": null,
     "expiration_date_to": null,
     "expires": false,
     "external_reference": "",
-    "id": "1471579186-e44be0c2-b8b4-4301-abc6-2c0d5ada35a2",
-    "init_point": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1471579186-e44be0c2-b8b4-4301-abc6-2c0d5ada35a2",
+    "id": "1471579186-3675929d-fef8-4f7e-9b73-8e52b44a4c2a",
+    "init_point": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1471579186-3675929d-fef8-4f7e-9b73-8e52b44a4c2a",
     "internal_metadata": null,
     "items": [
       {
@@ -84,7 +84,7 @@ Response body: {
       "pending": "",
       "success": ""
     },
-    "sandbox_init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1471579186-e44be0c2-b8b4-4301-abc6-2c0d5ada35a2",
+    "sandbox_init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=1471579186-3675929d-fef8-4f7e-9b73-8e52b44a4c2a",
     "site_id": "MLA",
     "shipments": {
       "default_shipping_method": null,
@@ -105,4 +105,4 @@ Response body: {
     "financing_group": ""
   }
 }
-SUCCESS! Init point: https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1471579186-e44be0c2-b8b4-4301-abc6-2c0d5ada35a2
+SUCCESS! Init point: https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1471579186-3675929d-fef8-4f7e-9b73-8e52b44a4c2a
