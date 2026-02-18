@@ -587,7 +587,7 @@ def create_reservation():
             init_point = preference["init_point"]
         except Exception as e:
             print(f"Error creating MP preference: {e}")
-            return jsonify({"error": "Error creating payment preference"}), 500
+            return jsonify({"error": f"Error creating payment preference: {str(e)}"}), 500
     
     return jsonify({
         "success": True,
