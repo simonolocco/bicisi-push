@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -277,7 +278,7 @@
                         compromiso con el equipo.</p>
 
                     <div id="dniUploadArea" class="relative">
-                        <input type="file" id="dniPhoto" accept="image/*" class="hidden"
+                        <input type="file" id="dniPhoto" accept="image/*,.heic,.heif" class="hidden"
                             onchange="handleDniUpload(event)">
                         <div id="dniPreview" class="hidden mb-4">
                             <img id="dniPreviewImg" class="max-h-48 rounded-xl mx-auto border border-gray-600">
@@ -539,13 +540,28 @@
         }
 
         async function handleDniUpload(event) {
-            const file = event.target.files[0];
+            let file = event.target.files[0];
             if (!file) return;
 
             const statusEl = document.getElementById('dniUploadStatus');
             statusEl.classList.remove('hidden');
-            statusEl.textContent = 'Subiendo foto...';
+            statusEl.textContent = 'Procesando foto...';
             statusEl.className = 'text-center mt-2 text-sm text-yellow-400';
+
+            // Convert HEIC/HEIF to JPEG client-side before uploading
+            const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+            if (isHeic && typeof heic2any !== 'undefined') {
+                try {
+                    statusEl.textContent = 'Convirtiendo imagen HEIC...';
+                    const jpegBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+                    file = new File([jpegBlob], file.name.replace(/\.heic|\.heif/i, '.jpg'), { type: 'image/jpeg' });
+                } catch (convErr) {
+                    console.warn('Client-side HEIC conversion failed, sending original:', convErr);
+                    // Fall through — server will attempt conversion
+                }
+            }
+
+            statusEl.textContent = 'Subiendo foto...';
 
             const formData = new FormData();
             formData.append('image', file);
@@ -565,7 +581,7 @@
                     statusEl.textContent = '✓ Foto del DNI subida correctamente';
                     statusEl.className = 'text-center mt-2 text-sm text-green-400';
                 } else {
-                    throw new Error('Error al subir');
+                    throw new Error(data.error || 'Error al subir');
                 }
             } catch (e) {
                 statusEl.textContent = '✗ Error al subir la foto. Intenta nuevamente.';

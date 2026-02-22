@@ -524,36 +524,24 @@ def create_reservation():
     ))
     
     # Add reservation items
-    preference_items = []
     for item in data.get('items', []):
         cursor.execute('''
             INSERT INTO reservation_items (reservation_id, category_id, quantity)
             VALUES (?, ?, ?)
         ''', (reservation_id, item['category_id'], item.get('quantity', 1)))
-        
-        # Get category details for MP preference
-        if data.get('payment_method') == 'mercadopago':
-            cursor.execute("SELECT name, price_full_day, price_half_day, price_per_hour FROM categories WHERE id = ?", (item['category_id'],))
-            cat = cursor.fetchone()
-            if cat:
-                unit_price = 0
-                rental_type = data.get('rental_type')
-                if rental_type == 'full_day': unit_price = cat['price_full_day']
-                elif rental_type == 'half_day': unit_price = cat['price_half_day']
-                elif rental_type == 'hours': 
-                    hours = data.get('end_hour', OPERATING_END) - data.get('start_hour', OPERATING_START)
-                    unit_price = cat['price_per_hour'] * hours
-                else: unit_price = cat['price_full_day'] # Fallback
-                
-                # Charge only 50% (Deposit)
-                deposit_price = unit_price * 0.5
-                
-                preference_items.append({
-                    "title": f"Seña (50%) - {cat['name']}",
-                    "quantity": item.get('quantity', 1),
-                    "unit_price": float(deposit_price),
-                    "currency_id": "ARS"
-                })
+    
+    # Build MP preference using the already-calculated deposit (50% of total)
+    # This avoids the previous bug where days/hours were not factored in
+    preference_items = []
+    if data.get('payment_method') == 'mercadopago':
+        deposit_amount = data.get('deposit', 0)
+        if deposit_amount > 0:
+            preference_items.append({
+                "title": "Seña (50%) - Reserva BiciSí",
+                "quantity": 1,
+                "unit_price": float(deposit_amount),
+                "currency_id": "ARS"
+            })
 
     conn.commit()
     conn.close()
@@ -624,11 +612,27 @@ def upload_dni_photo():
     
     # Check extension
     ext = file.filename.rsplit('.', 1)[-1].lower()
-    if ext not in ['jpg', 'jpeg', 'png', 'webp']:
+    if ext not in ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']:
         return jsonify({"error": "Formato de imagen no válido"}), 400
     
-    # Read file and convert to base64
+    # Read file data
     image_data = file.read()
+    
+    # Convert HEIC/HEIF to JPEG server-side
+    if ext in ['heic', 'heif']:
+        try:
+            import pillow_heif
+            from PIL import Image
+            pillow_heif.register_heif_opener()
+            img = Image.open(io.BytesIO(image_data))
+            buf = io.BytesIO()
+            img.convert('RGB').save(buf, format='JPEG', quality=85)
+            image_data = buf.getvalue()
+            ext = 'jpeg'
+        except Exception as e:
+            print(f"Error converting HEIC: {e}")
+            return jsonify({"error": "Error al procesar imagen HEIC. Intenta convertirla a JPG."}), 400
+    
     base64_encoded = base64.b64encode(image_data).decode('utf-8')
     mime_type = f"image/{'jpeg' if ext == 'jpg' else ext}"
     data_uri = f"data:{mime_type};base64,{base64_encoded}"
@@ -822,11 +826,27 @@ def upload_image():
     
     # Check extension
     ext = file.filename.rsplit('.', 1)[-1].lower()
-    if ext not in ['jpg', 'jpeg', 'png', 'webp']:
+    if ext not in ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']:
         return jsonify({"error": "Formato de imagen no válido"}), 400
     
-    # Read file and convert to base64
+    # Read file data
     image_data = file.read()
+    
+    # Convert HEIC/HEIF to JPEG server-side
+    if ext in ['heic', 'heif']:
+        try:
+            import pillow_heif
+            from PIL import Image
+            pillow_heif.register_heif_opener()
+            img = Image.open(io.BytesIO(image_data))
+            buf = io.BytesIO()
+            img.convert('RGB').save(buf, format='JPEG', quality=85)
+            image_data = buf.getvalue()
+            ext = 'jpeg'
+        except Exception as e:
+            print(f"Error converting HEIC: {e}")
+            return jsonify({"error": "Error al procesar imagen HEIC. Intenta convertirla a JPG."}), 400
+    
     base64_encoded = base64.b64encode(image_data).decode('utf-8')
     mime_type = f"image/{'jpeg' if ext == 'jpg' else ext}"
     data_uri = f"data:{mime_type};base64,{base64_encoded}"
