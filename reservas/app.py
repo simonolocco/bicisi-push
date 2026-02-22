@@ -26,8 +26,8 @@ def load_config():
         "WA_VERIFY_TOKEN": "javier",
         "WA_VERSION": "v19.0",
         "SECRET_KEY": "bicisi-secret-key-2024",
-        "MP_ACCESS_TOKEN": "TEST-4089125859574058-021718-384a315e4f5076feb41079180109d5fd-1471579186",
-        "MP_PUBLIC_KEY": "TEST-82eee22b-5985-4884-bfce-d31ac77f608a"
+        "MP_ACCESS_TOKEN": "APP_USR-1130238310754049-022119-a3982c7f48b99f81afe9ed3d13dff127-752329627",
+        "MP_PUBLIC_KEY": "APP_USR-ba55c13b-d90c-405f-a565-290b3ff488e7"
     }
     
     env_path = os.path.join(os.path.dirname(__file__), '.env')
