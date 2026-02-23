@@ -13,6 +13,7 @@ import io
 import mercadopago
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 CORS(app)
 
 # Load context-dependent config
