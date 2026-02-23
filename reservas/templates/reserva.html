@@ -539,8 +539,8 @@
             document.getElementById('bankInfo').classList.toggle('hidden', true); // Hide bank info as we use MP now
         }
 
-        // Compress image using Canvas before uploading
-        function compressImage(file, maxWidth = 1200, quality = 0.7) {
+        // Convert image to compressed JPEG data URI using Canvas (all client-side, no server needed)
+        function imageToDataURI(file, maxWidth = 1200, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function (e) {
@@ -557,18 +557,13 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        canvas.toBlob(function (blob) {
-                            if (blob) {
-                                resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
-                            } else {
-                                reject(new Error('Error al comprimir imagen'));
-                            }
-                        }, 'image/jpeg', quality);
+                        const dataURI = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataURI);
                     };
-                    img.onerror = reject;
+                    img.onerror = () => reject(new Error('No se pudo leer la imagen'));
                     img.src = e.target.result;
                 };
-                reader.onerror = reject;
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
                 reader.readAsDataURL(file);
             });
         }
@@ -582,50 +577,30 @@
             statusEl.textContent = 'Procesando foto...';
             statusEl.className = 'text-center mt-2 text-sm text-yellow-400';
 
-            // Convert HEIC/HEIF to JPEG client-side before uploading
-            const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
-            if (isHeic && typeof heic2any !== 'undefined') {
-                try {
+            try {
+                // Step 1: Convert HEIC/HEIF to JPEG if needed
+                const isHeic = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
+                if (isHeic && typeof heic2any !== 'undefined') {
                     statusEl.textContent = 'Convirtiendo imagen HEIC...';
-                    const jpegBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
-                    file = new File([jpegBlob], file.name.replace(/\.heic|\.heif/i, '.jpg'), { type: 'image/jpeg' });
-                } catch (convErr) {
-                    console.warn('Client-side HEIC conversion failed, sending original:', convErr);
+                    const jpegBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
+                    file = new File([Array.isArray(jpegBlob) ? jpegBlob[0] : jpegBlob], 'dni.jpg', { type: 'image/jpeg' });
                 }
-            }
 
-            // Compress image to reduce size (iPhone photos can be 5-10MB+)
-            try {
+                // Step 2: Compress and convert to data URI (all in browser, no server call)
                 statusEl.textContent = 'Comprimiendo foto...';
-                file = await compressImage(file, 1200, 0.7);
-            } catch (compErr) {
-                console.warn('Compression failed, sending original:', compErr);
-            }
+                const dataURI = await imageToDataURI(file, 1200, 0.7);
 
-            statusEl.textContent = 'Subiendo foto...';
+                // Step 3: Set preview and store
+                dniPhotoUrl = dataURI;
+                document.getElementById('dniPreviewImg').src = dataURI;
+                document.getElementById('dniPreview').classList.remove('hidden');
+                document.getElementById('dniUploadBtn').innerHTML = '<i class="fas fa-check mr-2"></i>Foto subida - Cambiar';
+                statusEl.textContent = '✓ Foto del DNI lista';
+                statusEl.className = 'text-center mt-2 text-sm text-green-400';
 
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                const res = await fetch('/api/upload-dni', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-
-                if (data.url) {
-                    dniPhotoUrl = data.url;
-                    document.getElementById('dniPreviewImg').src = data.url;
-                    document.getElementById('dniPreview').classList.remove('hidden');
-                    document.getElementById('dniUploadBtn').innerHTML = '<i class="fas fa-check mr-2"></i>Foto subida - Cambiar';
-                    statusEl.textContent = '✓ Foto del DNI subida correctamente';
-                    statusEl.className = 'text-center mt-2 text-sm text-green-400';
-                } else {
-                    throw new Error(data.error || 'Error al subir');
-                }
             } catch (e) {
-                statusEl.textContent = '✗ Error al subir la foto. Intenta nuevamente.';
+                console.error('Error procesando foto:', e);
+                statusEl.textContent = '✗ Error al procesar la foto. Probá con otro formato (JPG/PNG).';
                 statusEl.className = 'text-center mt-2 text-sm text-red-400';
             }
         }
