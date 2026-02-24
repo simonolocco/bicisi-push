@@ -30,18 +30,6 @@ def load_config():
         "MP_ACCESS_TOKEN": "APP_USR-1130238310754049-022119-a3982c7f48b99f81afe9ed3d13dff127-752329627",
         "MP_PUBLIC_KEY": "APP_USR-ba55c13b-d90c-405f-a565-290b3ff488e7"
     }
-    
-    env_path = os.path.join(os.path.dirname(__file__), '.env')
-    if os.path.exists(env_path):
-        with open(env_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                if line.strip() and not line.startswith('#'):
-                    key, value = line.strip().split('=', 1)
-                    if value.lower() == 'true': value = True
-                    elif value.lower() == 'false': value = False
-                    elif value.isdigit(): value = int(value)
-                    config[key] = value
-                    
     return config
 
 CONFIG = load_config()
