@@ -22,7 +22,7 @@ def load_config():
         "PORT": 5001,
         "DEBUG": True,
         "PUBLIC_URL": "https://bicisi.com.ar",
-        "WA_TOKEN": "EAAMZBwYxhrqwBQ4r3623RBVyWSKjojf6qCRN6H7DiNiiZAf607WZAnolS92B3aDhsXI36IYouMgFj2pSVUjZBpWdeZC5VGrf8daOjf6cLEOX1PT6m4YIFlbbkMZAY3mzpuRcUeZAlKLyFXExF0HXajG35l6PBP4ywA2NTPzEnn7gp04E60EYXf4qr6bHXcIWgZDZD",
+        "WA_TOKEN": "EAAMZBwYxhrqwBQZBnvQA0ktuLwQoi7N3JAdbYUE9rMt0YZC2IBCT7sowOZA1u1Xd3RaW5ZBV2a1vUvMFpsmp1ZCESXyq4ZCoREHtvr2oARDVaBqf8O4ZC9aVHrVMy4N7JjdXRlVPFyhYcMfmCwrdYPZCEmrPpZCUdFvnwteyYNhZCMxUFLmXeD4cieag7qAoDaXu0z0xAZDZD",
         "WA_PHONE_ID": "1056602097527404",
         "WA_VERIFY_TOKEN": "javier",
         "WA_VERSION": "v19.0",
