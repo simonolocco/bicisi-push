@@ -5,8 +5,8 @@ import json
 app = Flask(__name__)
 
 # Configuración
-TOKEN = "EAAPG3mWTNbQBQk1uV5TzKWPi2X08ohDxl2TE2ZAjfgPtqjfBfJhFLxcTYlEZCpdmMHNnE4DULaw2yFOO0ti5BaVeG1PTmFpeWje5qit2VLKUd09LiYludhvJtR6YgqXxcCBxYF03vZBjRIiZCSLBnGV74kCIKRjnnWKqT6bbK6P4ZAePdGHUWIB7q0GREyyJZCZATJNMHl7q24xRoy8Lkk0gukhdSw7IVaHA8fLzHZAF"
-PHONE_ID = "823208770885097"
+TOKEN = "EAAMZBwYxhrqwBQ4r3623RBVyWSKjojf6qCRN6H7DiNiiZAf607WZAnolS92B3aDhsXI36IYouMgFj2pSVUjZBpWdeZC5VGrf8daOjf6cLEOX1PT6m4YIFlbbkMZAY3mzpuRcUeZAlKLyFXExF0HXajG35l6PBP4ywA2NTPzEnn7gp04E60EYXf4qr6bHXcIWgZDZD"
+PHONE_ID = "1056602097527404"
 VERIFY_TOKEN = "javier"
 VERSION = "v19.0"
 
@@ -242,6 +242,18 @@ def receive():
     except Exception as e:
         print(f"Error en webhook: {e}")
         return jsonify(status="error"), 400
+
+    from flask import send_from_directory
+
+# Servir el index de la web de bicis
+@app.route('/web')
+def bicisi_index():
+    return send_from_directory('bicisi-web', 'index.html')
+
+# Servir los archivos estáticos (js, css, imágenes)
+@app.route('/web/<path:path>')
+def bicisi_static(path):
+    return send_from_directory('bicisi-web', path)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
