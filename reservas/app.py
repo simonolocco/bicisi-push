@@ -958,6 +958,8 @@ def send_whatsapp_message(to, data):
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Error enviando mensaje: {e}")
+        if 'response' in locals() and response is not None:
+             print(f"Detalle error Facebook: {response.text}")
 
 def send_wa_text(to, text):
     data = {"type": "text", "text": {"body": text}}
