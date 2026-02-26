@@ -147,8 +147,9 @@
                 </div>
                 <!-- Availability Warning -->
                 <div id="availabilityWarning" class="hidden bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-4">
-                    <p class="text-red-400 font-bold"><i class="fas fa-exclamation-triangle mr-2"></i><span
-                            id="availabilityWarningText">Sin stock disponible</span></p>
+                    <p class="text-red-400 font-bold mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Problemas de
+                        disponibilidad</p>
+                    <div id="availabilityWarningText" class="text-red-300 text-sm"></div>
                 </div>
                 <div id="halfDayOptions" class="hidden mb-4">
                     <span class="text-gray-400 mb-2 block">Turno</span>
@@ -443,7 +444,7 @@
             await checkDateAvailability();
         }
 
-        let dateAvailable = false; // Track if the selected date has stock
+        let dateAvailable = false;
 
         async function checkDateAvailability() {
             const date = document.getElementById('startDate').value;
@@ -456,7 +457,6 @@
             const warningEl = document.getElementById('availabilityWarning');
             const warningText = document.getElementById('availabilityWarningText');
 
-            // Determine which hours to check based on rental type
             let checkStart = 8, checkEnd = 19;
             if (type === 'half_day') {
                 if (!selectedHalfDay) { validateStep2(); return; }
@@ -464,14 +464,11 @@
                 else { checkStart = 13; checkEnd = 19; }
             }
 
-            // For multi_day, we check the start date (the API already handles multi-day overlap)
-            // We'll check ALL dates in range to be thorough
             let datesToCheck = [date];
             if (type === 'multi_day') {
                 const endDate = document.getElementById('endDate').value;
                 if (endDate) {
                     datesToCheck = [];
-                    // Safe date iteration without timezone issues
                     let curParts = date.split('-').map(Number);
                     let endParts = endDate.split('-').map(Number);
                     let curD = new Date(curParts[0], curParts[1] - 1, curParts[2]);
@@ -486,8 +483,11 @@
                 }
             }
 
-            // Check availability for ALL categories in the cart
             let stockProblems = [];
+            // For hours mode: merge slots across ALL categories
+            // A slot is unavailable if ANY category doesn't have stock
+            let mergedSlots = null;
+            let perCategorySlots = {}; // Track slots per category for accurate messaging
 
             for (const item of items) {
                 for (const checkDate of datesToCheck) {
@@ -499,26 +499,36 @@
                         });
                         const data = await res.json();
 
-                        // For 'hours' type, render the slots and let the user pick
+                        // For hours: merge availability from all categories
                         if (type === 'hours' && checkDate === date) {
-                            renderHourSlots(data.slots);
-                        }
+                            // Store this category's raw slots for per-category messaging
+                            perCategorySlots[item.category.name] = data.slots;
 
-                        // For full_day, half_day, multi_day: check if ALL relevant hours are available
-                        if (type !== 'hours') {
-                            for (const slot of data.slots) {
-                                if (slot.hour >= checkStart && slot.hour < checkEnd && !slot.available) {
-                                    stockProblems.push(`${item.category.name}: sin stock el ${formatDateSafe(checkDate)} a las ${slot.hour}:00`);
-                                    break;
+                            if (!mergedSlots) {
+                                mergedSlots = {};
+                                for (const slot of data.slots) {
+                                    mergedSlots[slot.hour] = { ...slot, reasons: [] };
+                                    if (!slot.available) {
+                                        mergedSlots[slot.hour].reasons.push(`${item.category.name}: ${slot.reason}`);
+                                    }
+                                }
+                            } else {
+                                for (const slot of data.slots) {
+                                    if (!slot.available) {
+                                        mergedSlots[slot.hour].available = false;
+                                        mergedSlots[slot.hour].reasons.push(`${item.category.name}: ${slot.reason}`);
+                                    }
                                 }
                             }
                         }
 
-                        // For hours: check if ALL slots are unavailable
-                        if (type === 'hours' && checkDate === date) {
-                            const allUnavailable = data.slots.every(slot => !slot.available);
-                            if (allUnavailable) {
-                                stockProblems.push(`${item.category.name}: sin stock para el ${formatDateSafe(checkDate)}`);
+                        // For full_day, half_day, multi_day: check per category
+                        if (type !== 'hours') {
+                            for (const slot of data.slots) {
+                                if (slot.hour >= checkStart && slot.hour < checkEnd && !slot.available) {
+                                    stockProblems.push(`<b>${item.category.name}</b>: sin stock el ${formatDateSafe(checkDate)} a las ${slot.hour}:00`);
+                                    break;
+                                }
                             }
                         }
                     } catch (e) {
@@ -527,10 +537,24 @@
                 }
             }
 
+            // Render merged slots for hours mode
+            if (type === 'hours' && mergedSlots) {
+                const slotsArray = Object.values(mergedSlots).sort((a, b) => a.hour - b.hour);
+                renderHourSlots(slotsArray);
+
+                // Check EACH category individually for stock problems
+                for (const [catName, slots] of Object.entries(perCategorySlots)) {
+                    const allUnavailable = slots.every(slot => !slot.available);
+                    if (allUnavailable) {
+                        stockProblems.push(`<b>${catName}</b>: sin stock para el ${formatDateSafe(date)}`);
+                    }
+                }
+            }
+
             // Show/hide warning
             if (stockProblems.length > 0) {
                 dateAvailable = false;
-                warningText.textContent = 'No hay suficiente stock para esta fecha. ' + stockProblems[0] + '. Probá otra fecha o menos unidades.';
+                warningText.innerHTML = stockProblems.map(p => `• ${p}`).join('<br>');
                 warningEl.classList.remove('hidden');
             } else {
                 dateAvailable = true;
@@ -608,8 +632,8 @@
             if (type === 'half_day') valid = valid && !!selectedHalfDay;
             if (type === 'hours') valid = valid && selectedHours.length > 0;
 
-            // Block if stock is not available (for non-hours types, dateAvailable tracks this)
-            if (type !== 'hours' && !dateAvailable && startDate) {
+            // Block if stock is not available
+            if (!dateAvailable && startDate) {
                 valid = false;
             }
 
