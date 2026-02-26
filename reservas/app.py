@@ -339,21 +339,50 @@ def get_available_slots():
     row = cursor.fetchone()
     max_stock = row['stock'] if row else 0
     
-    # Get reservations for this date and category
+    # Get reservations that overlap with this date
+    # A reservation overlaps if start_date <= date_str AND end_date >= date_str
     cursor.execute('''
-        SELECT r.start_hour, r.end_hour, ri.quantity 
+        SELECT r.start_date, r.end_date, r.start_hour, r.end_hour, ri.quantity 
         FROM reservations r
         JOIN reservation_items ri ON r.id = ri.reservation_id
         WHERE ri.category_id = ? 
-        AND r.start_date = ?
-        AND r.status != 'cancelled'
-        AND r.status != 'overridden'
-    ''', (category_id, date_str))
+        AND r.start_date <= ? 
+        AND r.end_date >= ?
+        AND r.status = 'confirmed'
+    ''', (category_id, date_str, date_str))
     
     reserved_hours = {}
     for row in cursor.fetchall():
-        for h in range(row['start_hour'], row['end_hour']):
-            reserved_hours[h] = reserved_hours.get(h, 0) + row['quantity']
+        s_date = row['start_date']
+        e_date = row['end_date']
+        s_hour = row['start_hour']
+        e_hour = row['end_hour']
+        qty = row['quantity']
+        
+        # Calculate which hours are blocked on the REQUESTED date
+        # If it's an intermediate day, blocks everything
+        block_start = OPERATING_START
+        block_end = OPERATING_END
+        
+        if s_date == date_str and e_date == date_str:
+            # Single day reservation
+            block_start = s_hour
+            block_end = e_hour
+        elif s_date == date_str:
+            # First day of multi-day
+            block_start = s_hour
+            block_end = OPERATING_END
+        elif e_date == date_str:
+            # Last day of multi-day
+            block_start = OPERATING_START
+            block_end = e_hour
+        else:
+            # Middle of multi-day - blocks full range
+            block_start = OPERATING_START
+            block_end = OPERATING_END
+            
+        for h in range(block_start, block_end):
+            reserved_hours[h] = reserved_hours.get(h, 0) + qty
     
     conn.close()
     
@@ -483,6 +512,74 @@ def create_reservation():
                 WHERE id = ?
             ''', (data.get('customer_phone'), datetime.now().isoformat(), row['id']))
     
+    # --- Stock Availability Check ---
+    start_date_obj = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date()
+    end_date_obj = datetime.strptime(data.get('end_date', data.get('start_date')), '%Y-%m-%d').date()
+    
+    # Iterate through each day of the reservation
+    curr_date = start_date_obj
+    while curr_date <= end_date_obj:
+        date_str = curr_date.isoformat()
+        
+        for item in data.get('items', []):
+            cat_id = item['category_id']
+            qty = item.get('quantity', 1)
+            
+            # Use same logic as get_available_slots but in-memory/in-loop
+            # We'll do a focused query for each item/day
+            cursor.execute("SELECT stock FROM categories WHERE id = ?", (cat_id,))
+            max_stock = cursor.fetchone()['stock']
+            
+            cursor.execute('''
+                SELECT r.start_date, r.end_date, r.start_hour, r.end_hour, ri.quantity 
+                FROM reservations r
+                JOIN reservation_items ri ON r.id = ri.reservation_id
+                WHERE ri.category_id = ? 
+                AND r.start_date <= ? 
+                AND r.end_date >= ?
+                AND r.status = 'confirmed'
+            ''', (cat_id, date_str, date_str))
+            
+            day_reserved = {}
+            for res_row in cursor.fetchall():
+                # Block logic (same as get_available_slots)
+                b_start, b_end = OPERATING_START, OPERATING_END
+                if res_row['start_date'] == date_str and res_row['end_date'] == date_str:
+                    b_start, b_end = res_row['start_hour'], res_row['end_hour']
+                elif res_row['start_date'] == date_str:
+                    b_start, b_end = res_row['start_hour'], OPERATING_END
+                elif res_row['end_date'] == date_str:
+                    b_start, b_end = OPERATING_START, res_row['end_hour']
+                
+                for h in range(b_start, b_end):
+                    day_reserved[h] = day_reserved.get(h, 0) + res_row['quantity']
+            
+            # Check requested range for THIS specific reservation
+            req_start = data.get('start_hour', OPERATING_START)
+            req_end = data.get('end_hour', OPERATING_END)
+            
+            # Adjust range for multi-day start/end
+            if curr_date == start_date_obj and curr_date == end_date_obj:
+                # Single day: use requested hours
+                pass 
+            elif curr_date == start_date_obj:
+                # First day: starts at req_start, ends at 19
+                req_end = OPERATING_END
+            elif curr_date == end_date_obj:
+                # Last day: starts at 8, ends at req_end
+                req_start = OPERATING_START
+            else:
+                # Intermediate: full day
+                req_start, req_end = OPERATING_START, OPERATING_END
+                
+            for h in range(req_start, req_end):
+                if (day_reserved.get(h, 0) + qty) > max_stock:
+                    conn.close()
+                    return jsonify({"error": f"Lo sentimos, no hay stock disponible de '{cat_id}' para el día {date_str} a las {h}:00. Probá con otra fecha o menos unidades."}), 400
+                    
+        curr_date += timedelta(days=1)
+    # --- End Stock Check ---
+
     # Create new reservation
     reservation_id = str(uuid.uuid4())
     cursor.execute('''

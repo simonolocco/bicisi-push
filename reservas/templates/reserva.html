@@ -134,15 +134,21 @@
                         <span class="text-gray-400 mb-2 block">Fecha de inicio</span>
                         <input type="date" id="startDate"
                             class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
-                            onchange="loadTimeSlots()">
+                            onchange="checkDateAvailability()">
                     </label>
                     <div id="endDateContainer" class="hidden">
                         <label class="block mb-4">
                             <span class="text-gray-400 mb-2 block">Fecha de fin</span>
                             <input type="date" id="endDate"
-                                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3">
+                                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
+                                onchange="checkDateAvailability()">
                         </label>
                     </div>
+                </div>
+                <!-- Availability Warning -->
+                <div id="availabilityWarning" class="hidden bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-4">
+                    <p class="text-red-400 font-bold"><i class="fas fa-exclamation-triangle mr-2"></i><span
+                            id="availabilityWarningText">Sin stock disponible</span></p>
                 </div>
                 <div id="halfDayOptions" class="hidden mb-4">
                     <span class="text-gray-400 mb-2 block">Turno</span>
@@ -345,6 +351,14 @@
         let dniPhotoUrl = null;
         let currentStep = 1;
 
+        // Timezone-safe date formatting: "2026-02-28" -> "28/2/2026"
+        function formatDateSafe(dateStr) {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parseInt(parts[2])}/${parseInt(parts[1])}/${parts[0]}`;
+        }
+
         async function init() {
             const res = await fetch('/api/categories');
             categories = await res.json();
@@ -353,7 +367,11 @@
         }
 
         function setMinDate() {
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const today = `${y}-${m}-${d}`;
             document.getElementById('startDate').min = today;
             document.getElementById('endDate').min = today;
         }
@@ -413,31 +431,112 @@
             document.getElementById('endDateContainer').classList.toggle('hidden', type !== 'multi_day');
             document.getElementById('halfDayOptions').classList.toggle('hidden', type !== 'half_day');
             document.getElementById('hoursContainer').classList.toggle('hidden', type !== 'hours');
-            validateStep2();
+            checkDateAvailability();
         }
 
-        function selectHalfDay(shift) {
+        async function selectHalfDay(shift) {
             selectedHalfDay = shift;
             document.querySelectorAll('.half-day-btn').forEach(btn => {
                 btn.classList.toggle('border-bicisi-primary', btn.dataset.shift === shift);
                 btn.classList.toggle('bg-bicisi-primary/20', btn.dataset.shift === shift);
             });
-            validateStep2();
+            await checkDateAvailability();
         }
 
-        async function loadTimeSlots() {
-            const date = document.getElementById('startDate').value;
-            if (!date) return;
-            const firstItem = Object.values(cart).find(item => item.quantity > 0);
-            if (!firstItem) return;
+        let dateAvailable = false; // Track if the selected date has stock
 
-            const res = await fetch('/api/available-slots', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date, category_id: firstItem.category.id, quantity: firstItem.quantity })
-            });
-            const data = await res.json();
-            renderHourSlots(data.slots);
+        async function checkDateAvailability() {
+            const date = document.getElementById('startDate').value;
+            if (!date) { validateStep2(); return; }
+
+            const type = document.getElementById('rentalType').value;
+            const items = Object.values(cart).filter(item => item.quantity > 0);
+            if (items.length === 0) { validateStep2(); return; }
+
+            const warningEl = document.getElementById('availabilityWarning');
+            const warningText = document.getElementById('availabilityWarningText');
+
+            // Determine which hours to check based on rental type
+            let checkStart = 8, checkEnd = 19;
+            if (type === 'half_day') {
+                if (!selectedHalfDay) { validateStep2(); return; }
+                if (selectedHalfDay === 'morning') { checkStart = 8; checkEnd = 13; }
+                else { checkStart = 13; checkEnd = 19; }
+            }
+
+            // For multi_day, we check the start date (the API already handles multi-day overlap)
+            // We'll check ALL dates in range to be thorough
+            let datesToCheck = [date];
+            if (type === 'multi_day') {
+                const endDate = document.getElementById('endDate').value;
+                if (endDate) {
+                    datesToCheck = [];
+                    // Safe date iteration without timezone issues
+                    let curParts = date.split('-').map(Number);
+                    let endParts = endDate.split('-').map(Number);
+                    let curD = new Date(curParts[0], curParts[1] - 1, curParts[2]);
+                    let endD = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+                    while (curD <= endD) {
+                        const yy = curD.getFullYear();
+                        const mm = String(curD.getMonth() + 1).padStart(2, '0');
+                        const dd = String(curD.getDate()).padStart(2, '0');
+                        datesToCheck.push(`${yy}-${mm}-${dd}`);
+                        curD.setDate(curD.getDate() + 1);
+                    }
+                }
+            }
+
+            // Check availability for ALL categories in the cart
+            let stockProblems = [];
+
+            for (const item of items) {
+                for (const checkDate of datesToCheck) {
+                    try {
+                        const res = await fetch('/api/available-slots', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ date: checkDate, category_id: item.category.id, quantity: item.quantity })
+                        });
+                        const data = await res.json();
+
+                        // For 'hours' type, render the slots and let the user pick
+                        if (type === 'hours' && checkDate === date) {
+                            renderHourSlots(data.slots);
+                        }
+
+                        // For full_day, half_day, multi_day: check if ALL relevant hours are available
+                        if (type !== 'hours') {
+                            for (const slot of data.slots) {
+                                if (slot.hour >= checkStart && slot.hour < checkEnd && !slot.available) {
+                                    stockProblems.push(`${item.category.name}: sin stock el ${formatDateSafe(checkDate)} a las ${slot.hour}:00`);
+                                    break;
+                                }
+                            }
+                        }
+
+                        // For hours: check if ALL slots are unavailable
+                        if (type === 'hours' && checkDate === date) {
+                            const allUnavailable = data.slots.every(slot => !slot.available);
+                            if (allUnavailable) {
+                                stockProblems.push(`${item.category.name}: sin stock para el ${formatDateSafe(checkDate)}`);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error checking availability:', e);
+                    }
+                }
+            }
+
+            // Show/hide warning
+            if (stockProblems.length > 0) {
+                dateAvailable = false;
+                warningText.textContent = 'No hay suficiente stock para esta fecha. ' + stockProblems[0] + '. Probá otra fecha o menos unidades.';
+                warningEl.classList.remove('hidden');
+            } else {
+                dateAvailable = true;
+                warningEl.classList.add('hidden');
+            }
+
             validateStep2();
         }
 
@@ -452,9 +551,48 @@
         }
 
         function toggleHour(hour) {
-            const idx = selectedHours.indexOf(hour);
-            if (idx > -1) selectedHours.splice(idx, 1);
-            else selectedHours.push(hour);
+            if (selectedHours.length === 0) {
+                selectedHours = [hour];
+            } else if (selectedHours.length === 1) {
+                const first = selectedHours[0];
+                if (first === hour) {
+                    selectedHours = [];
+                } else {
+                    const start = Math.min(first, hour);
+                    const end = Math.max(first, hour);
+                    selectedHours = [];
+                    for (let h = start; h <= end; h++) {
+                        const btn = document.querySelector(`.hour-btn[data-hour="${h}"]`);
+                        if (btn && !btn.disabled) {
+                            selectedHours.push(h);
+                        } else if (btn && btn.disabled) {
+                            alert("El rango seleccionado contiene horarios no disponibles por logística o falta de stock.");
+                            selectedHours = [first];
+                            return;
+                        }
+                    }
+                }
+            } else {
+                const start = Math.min(...selectedHours);
+                const end = Math.max(...selectedHours);
+
+                if (hour < start) {
+                    for (let h = start - 1; h >= hour; h--) {
+                        const btn = document.querySelector(`.hour-btn[data-hour="${h}"]`);
+                        if (btn && !btn.disabled) selectedHours.unshift(h);
+                        else { alert("No se puede extender la selección: horario no disponible."); break; }
+                    }
+                } else if (hour > end) {
+                    for (let h = end + 1; h <= hour; h++) {
+                        const btn = document.querySelector(`.hour-btn[data-hour="${h}"]`);
+                        if (btn && !btn.disabled) selectedHours.push(h);
+                        else { alert("No se puede extender la selección: horario no disponible."); break; }
+                    }
+                } else {
+                    selectedHours = [hour];
+                }
+            }
+
             selectedHours.sort((a, b) => a - b);
             document.querySelectorAll('.hour-btn').forEach(btn => {
                 btn.classList.toggle('selected', selectedHours.includes(parseInt(btn.dataset.hour)));
@@ -469,6 +607,12 @@
             if (type === 'multi_day') valid = valid && !!document.getElementById('endDate').value;
             if (type === 'half_day') valid = valid && !!selectedHalfDay;
             if (type === 'hours') valid = valid && selectedHours.length > 0;
+
+            // Block if stock is not available (for non-hours types, dateAvailable tracks this)
+            if (type !== 'hours' && !dateAvailable && startDate) {
+                valid = false;
+            }
+
             document.getElementById('btnToStep3').disabled = !valid;
         }
 
@@ -515,8 +659,10 @@
             let hours = 0, days = 1;
             if (type === 'hours') hours = selectedHours.length;
             if (type === 'multi_day') {
-                const start = new Date(document.getElementById('startDate').value);
-                const end = new Date(document.getElementById('endDate').value);
+                const startParts = document.getElementById('startDate').value.split('-').map(Number);
+                const endParts = document.getElementById('endDate').value.split('-').map(Number);
+                const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+                const end = new Date(endParts[0], endParts[1] - 1, endParts[2]);
                 days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
             }
 
