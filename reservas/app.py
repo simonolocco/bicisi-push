@@ -14,7 +14,7 @@ import mercadopago
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
-CORS(app)
+CORS(app, supports_credentials=True, origins="*")
 
 # Load context-dependent config
 def load_config():
@@ -738,8 +738,15 @@ def admin():
 def admin_login():
     """Admin login"""
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        data = request.get_json(silent=True)
+        if data is not None:
+            username = data.get('username')
+            password = data.get('password')
+            is_json_req = True
+        else:
+            username = request.form.get('username')
+            password = request.form.get('password')
+            is_json_req = False
         
         conn = get_db()
         cursor = conn.cursor()
@@ -753,7 +760,12 @@ def admin_login():
         if admin:
             session['admin_logged_in'] = True
             session['admin_username'] = username
+            if is_json_req:
+                return jsonify({"success": True})
             return redirect(url_for('admin'))
+            
+        if is_json_req:
+            return jsonify({"error": "Credenciales inválidas"}), 401
         return render_template('admin_login.html', error="Credenciales inválidas")
     
     return render_template('admin_login.html')
@@ -980,6 +992,16 @@ def admin_stats():
         "total_stock": stock,
         "categories_count": cat_count
     })
+
+@app.route('/api/admin/default-messages')
+@login_required
+def admin_default_messages():
+    """Return default WhatsApp bot messages"""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), 'data', 'default_messages.json'), 'r', encoding='utf-8') as f:
+            return jsonify(json.load(f))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/admin/settings', methods=['GET', 'POST', 'PUT'])
 @login_required
