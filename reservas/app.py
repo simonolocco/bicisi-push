@@ -654,7 +654,8 @@ def create_reservation():
                 "failure": f"https://bicisi.com.ar/reserva?status=failure&reservation_id={reservation_id}",
                 "pending": f"https://bicisi.com.ar/reserva?status=pending&reservation_id={reservation_id}"
             },
-            "auto_return": "approved", # Descomentar en producción (requiere HTTPS/dominio real)
+            "auto_return": "approved",
+            "notification_url": "https://bicisi.com.ar/api/mp-webhook",
             "external_reference": reservation_id,
             "statement_descriptor": "BICISI RESERVA"
         }
@@ -858,6 +859,7 @@ def admin_reservations():
         FROM reservations r
         LEFT JOIN reservation_items ri ON r.id = ri.reservation_id
         LEFT JOIN categories c ON ri.category_id = c.id
+        WHERE r.status != 'pending_payment'
         GROUP BY r.id
         ORDER BY r.created_at DESC
     ''')
@@ -960,7 +962,7 @@ def admin_stats():
     
     today = datetime.now().date().isoformat()
     
-    cursor.execute("SELECT COUNT(*) as total FROM reservations")
+    cursor.execute("SELECT COUNT(*) as total FROM reservations WHERE status != 'pending_payment'")
     total = cursor.fetchone()['total']
     
     cursor.execute("SELECT COUNT(*) as count FROM reservations WHERE status = 'pending'")
@@ -969,7 +971,7 @@ def admin_stats():
     cursor.execute("SELECT COUNT(*) as count FROM reservations WHERE status = 'confirmed'")
     confirmed = cursor.fetchone()['count']
     
-    cursor.execute("SELECT COUNT(*) as count FROM reservations WHERE start_date = ?", (today,))
+    cursor.execute("SELECT COUNT(*) as count FROM reservations WHERE start_date = ? AND status != 'pending_payment'", (today,))
     today_count = cursor.fetchone()['count']
     
     cursor.execute("SELECT COALESCE(SUM(total), 0) as revenue FROM reservations WHERE status = 'confirmed'")
@@ -1223,6 +1225,89 @@ def wa_receive():
     except Exception as e:
         print(f"Error en webhook: {e}")
         return jsonify(status="error"), 400
+
+# ==================== MERCADO PAGO WEBHOOK ====================
+
+@app.route('/api/mp-webhook', methods=['GET', 'POST'])
+def mp_webhook():
+    """Receive MercadoPago IPN/Webhook notifications"""
+    # GET = MP verifying the webhook URL is reachable
+    if request.method == 'GET':
+        return jsonify({"status": "ok"}), 200
+    
+    try:
+        # MP sends either query params or JSON body
+        topic = request.args.get('topic') or request.args.get('type')
+        resource_id = request.args.get('id')
+        
+        # Also check JSON body (newer webhook format)
+        body = request.get_json(silent=True) or {}
+        if not topic:
+            topic = body.get('type', body.get('topic', ''))
+        if not resource_id:
+            resource_id = body.get('data', {}).get('id', body.get('resource', ''))
+        
+        print(f"MP WEBHOOK: topic={topic}, id={resource_id}, body={json.dumps(body)}", flush=True)
+        
+        # We only care about payment notifications
+        if topic not in ('payment', 'merchant_order'):
+            return jsonify({"status": "ignored"}), 200
+        
+        if topic == 'payment' and resource_id:
+            # Query MP API to get payment details
+            payment_response = sdk.payment().get(resource_id)
+            payment = payment_response.get('response', {})
+            
+            payment_status = payment.get('status')
+            external_ref = payment.get('external_reference')
+            
+            print(f"MP WEBHOOK: payment_status={payment_status}, external_ref={external_ref}", flush=True)
+            
+            if payment_status == 'approved' and external_ref:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute(
+                    'UPDATE reservations SET status = ? WHERE id = ? AND status = ?',
+                    ('confirmed', external_ref, 'pending_payment')
+                )
+                updated = cursor.rowcount
+                conn.commit()
+                conn.close()
+                print(f"MP WEBHOOK: Reservation {external_ref} confirmed (rows updated: {updated})", flush=True)
+        
+        elif topic == 'merchant_order' and resource_id:
+            # For merchant_order, check if all payments are approved
+            # Extract ID from resource URL if needed
+            order_id = resource_id.split('/')[-1] if '/' in str(resource_id) else resource_id
+            order_response = sdk.merchant_order().get(order_id)
+            order = order_response.get('response', {})
+            
+            external_ref = order.get('external_reference')
+            payments = order.get('payments', [])
+            
+            total_paid = sum(p.get('total_paid_amount', 0) for p in payments if p.get('status') == 'approved')
+            order_total = order.get('total_amount', 0)
+            
+            print(f"MP WEBHOOK: order total={order_total}, paid={total_paid}, ref={external_ref}", flush=True)
+            
+            if total_paid >= order_total and external_ref:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute(
+                    'UPDATE reservations SET status = ? WHERE id = ? AND status = ?',
+                    ('confirmed', external_ref, 'pending_payment')
+                )
+                updated = cursor.rowcount
+                conn.commit()
+                conn.close()
+                print(f"MP WEBHOOK: Reservation {external_ref} confirmed via merchant_order (rows updated: {updated})", flush=True)
+        
+        return jsonify({"status": "ok"}), 200
+        
+    except Exception as e:
+        print(f"MP WEBHOOK ERROR: {e}", flush=True)
+        # Always return 200 to MP so it doesn't keep retrying
+        return jsonify({"status": "error", "detail": str(e)}), 200
 
 # ==================== MAIN ====================
 
