@@ -366,16 +366,16 @@ def get_available_slots():
         
         if s_date == date_str and e_date == date_str:
             # Single day reservation
-            block_start = s_hour
-            block_end = e_hour
+            block_start = max(OPERATING_START, s_hour - 1)
+            block_end = min(OPERATING_END, e_hour + 1)
         elif s_date == date_str:
             # First day of multi-day
-            block_start = s_hour
+            block_start = max(OPERATING_START, s_hour - 1)
             block_end = OPERATING_END
         elif e_date == date_str:
             # Last day of multi-day
             block_start = OPERATING_START
-            block_end = e_hour
+            block_end = min(OPERATING_END, e_hour + 1)
         else:
             # Middle of multi-day - blocks full range
             block_start = OPERATING_START
@@ -545,11 +545,11 @@ def create_reservation():
                 # Block logic (same as get_available_slots)
                 b_start, b_end = OPERATING_START, OPERATING_END
                 if res_row['start_date'] == date_str and res_row['end_date'] == date_str:
-                    b_start, b_end = res_row['start_hour'], res_row['end_hour']
+                    b_start, b_end = max(OPERATING_START, res_row['start_hour'] - 1), min(OPERATING_END, res_row['end_hour'] + 1)
                 elif res_row['start_date'] == date_str:
-                    b_start, b_end = res_row['start_hour'], OPERATING_END
+                    b_start, b_end = max(OPERATING_START, res_row['start_hour'] - 1), OPERATING_END
                 elif res_row['end_date'] == date_str:
-                    b_start, b_end = OPERATING_START, res_row['end_hour']
+                    b_start, b_end = OPERATING_START, min(OPERATING_END, res_row['end_hour'] + 1)
                 
                 for h in range(b_start, b_end):
                     day_reserved[h] = day_reserved.get(h, 0) + res_row['quantity']
@@ -560,14 +560,17 @@ def create_reservation():
             
             # Adjust range for multi-day start/end
             if curr_date == start_date_obj and curr_date == end_date_obj:
-                # Single day: use requested hours
-                pass 
+                # Single day: use requested hours + 1 hr buffer
+                req_start = max(OPERATING_START, req_start - 1)
+                req_end = min(OPERATING_END, req_end + 1)
             elif curr_date == start_date_obj:
-                # First day: starts at req_start, ends at 19
+                # First day: starts at req_start - 1, ends at 19
+                req_start = max(OPERATING_START, req_start - 1)
                 req_end = OPERATING_END
             elif curr_date == end_date_obj:
-                # Last day: starts at 8, ends at req_end
+                # Last day: starts at 8, ends at req_end + 1
                 req_start = OPERATING_START
+                req_end = min(OPERATING_END, req_end + 1)
             else:
                 # Intermediate: full day
                 req_start, req_end = OPERATING_START, OPERATING_END
