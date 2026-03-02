@@ -121,11 +121,15 @@
 
         <!-- Reservations Tab -->
         <div id="tab-reservations" class="tab-content">
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 class="text-2xl font-bold">Reservas</h2>
-                <div class="flex gap-2">
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="openNewReservationModal()"
+                        class="bg-bicisi-primary text-gray-900 px-4 py-2 rounded-xl font-semibold whitespace-nowrap">
+                        <i class="fas fa-plus mr-2"></i>Nueva Reserva
+                    </button>
                     <select id="filterStatus" onchange="loadReservations()"
-                        class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2">
+                        class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 w-full md:w-auto">
                         <option value="">Todos los estados</option>
                         <option value="confirmed">Confirmadas</option>
                         <option value="pending">Pendientes</option>
@@ -297,6 +301,79 @@
                         class="fas fa-times text-xl"></i></button>
             </div>
             <div id="reservationDetail"></div>
+        </div>
+    </div>
+
+    <!-- New Admin Reservation Modal -->
+    <div id="newReservationModal"
+        class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl p-6 max-w-lg w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Nueva Reserva Manual</h3>
+                <button onclick="closeNewReservationModal()" class="text-gray-400 hover:text-white"><i
+                        class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="newReservationForm" onsubmit="saveNewReservation(event)">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-400 mb-2 text-sm">Nombre Cliente</label>
+                        <input type="text" id="nrName" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-2 text-sm">Teléfono</label>
+                        <input type="text" id="nrPhone" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2 text-sm">Tipo de Alquiler</label>
+                    <select id="nrRentalType" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2">
+                        <option value="full_day">Día Completo</option>
+                        <option value="half_day">Medio Día</option>
+                        <option value="hours">Por Horas</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-400 mb-2 text-sm">Fecha Inicio</label>
+                        <input type="date" id="nrStartDate" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2" style="color-scheme: dark;">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-2 text-sm">Fecha Fin</label>
+                        <input type="date" id="nrEndDate" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2" style="color-scheme: dark;">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-400 mb-2 text-sm">Hora Inicio (8-19)</label>
+                        <input type="number" id="nrStartHour" min="8" max="19" value="8" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-2 text-sm">Hora Fin (8-19)</label>
+                        <input type="number" id="nrEndHour" min="8" max="19" value="19" required
+                            class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-2">
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-400 mb-2 text-sm">Items y Cantidades</label>
+                    <div id="nrCategoriesContainer" class="space-y-2 max-h-40 overflow-y-auto bg-gray-900/50 p-3 rounded-xl border border-gray-700">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button type="submit" id="nrSubmitBtn"
+                    class="w-full bg-bicisi-primary text-gray-900 py-3 rounded-xl font-bold flex justify-center items-center">
+                    Crear Reserva
+                </button>
+            </form>
         </div>
     </div>
 
@@ -575,6 +652,94 @@
             await fetch(`/api/admin/reservations/${id}`, { method: 'DELETE' });
             loadReservations();
             loadStats();
+        }
+
+        function openNewReservationModal() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('nrStartDate').value = today;
+            document.getElementById('nrEndDate').value = today;
+            document.getElementById('nrName').value = '';
+            document.getElementById('nrPhone').value = '';
+            
+            const container = document.getElementById('nrCategoriesContainer');
+            if(categories.length === 0) {
+                container.innerHTML = '<div class="text-gray-400 p-2 text-sm">No hay categorías cargadas.</div>';
+            } else {
+                container.innerHTML = categories.map(cat => `
+                    <div class="flex justify-between items-center bg-gray-800 p-2 rounded-lg">
+                        <span class="text-sm truncate pr-2">${cat.name} (Stock: ${cat.stock})</span>
+                        <input type="number" id="nr_qty_${cat.id}" min="0" value="0" class="w-16 bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-center">
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('newReservationModal').classList.remove('hidden');
+        }
+
+        function closeNewReservationModal() {
+            document.getElementById('newReservationModal').classList.add('hidden');
+        }
+
+        async function saveNewReservation(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('nrSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creando...';
+            
+            try {
+                const items = [];
+                categories.forEach(cat => {
+                    const el = document.getElementById(`nr_qty_${cat.id}`);
+                    if (el && parseInt(el.value) > 0) {
+                        items.push({
+                            category_id: cat.id,
+                            quantity: parseInt(el.value)
+                        });
+                    }
+                });
+                
+                if (items.length === 0) {
+                    alert('Debe seleccionar al menos 1 bicicleta.');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Crear Reserva';
+                    return;
+                }
+                
+                const payload = {
+                    customer_name: document.getElementById('nrName').value,
+                    customer_phone: document.getElementById('nrPhone').value,
+                    rental_type: document.getElementById('nrRentalType').value,
+                    start_date: document.getElementById('nrStartDate').value,
+                    end_date: document.getElementById('nrEndDate').value,
+                    start_hour: parseInt(document.getElementById('nrStartHour').value),
+                    end_hour: parseInt(document.getElementById('nrEndHour').value),
+                    items: items,
+                    payment_method: 'cash',
+                    notes: 'Creada manualmente desde panel web'
+                };
+                
+                const res = await fetch('/api/admin/reservations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    alert('Reserva creada exitosamente');
+                    closeNewReservationModal();
+                    loadReservations();
+                    loadStats();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Crear Reserva';
+            }
         }
 
         init();
