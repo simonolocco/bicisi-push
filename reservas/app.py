@@ -451,8 +451,15 @@ def calculate_price():
             price = category['price_half_day'] * qty * days
             label = f"{category['name']} x{qty} - {days} medio día(s)"
         elif rental_type == 'hours':
-            price = category['price_per_hour'] * qty * hours
-            label = f"{category['name']} x{qty} - {hours} hora(s)"
+            # Cap hourly price at full day price
+            hourly_price = category['price_per_hour'] * qty * hours
+            max_daily_price = category['price_full_day'] * qty
+            if hourly_price > max_daily_price:
+                price = max_daily_price
+                label = f"{category['name']} x{qty} - {hours} hora(s) (Tope diario)"
+            else:
+                price = hourly_price
+                label = f"{category['name']} x{qty} - {hours} hora(s)"
         else:
             price = category['price_full_day'] * qty * days
             label = f"{category['name']} x{qty} - {days} día(s)"
@@ -850,12 +857,56 @@ def admin_category_detail(category_id):
     conn.close()
     return jsonify({"success": True})
 
-@app.route('/api/admin/reservations')
+@app.route('/api/admin/reservations', methods=['GET', 'POST'])
 @login_required
 def admin_reservations():
-    """Get all reservations"""
+    """Get all reservations or create a new one as admin without limits"""
     conn = get_db()
     cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        data = request.json
+        reservation_id = str(uuid.uuid4())
+        
+        # Insert without stock validations
+        cursor.execute('''
+            INSERT INTO reservations (
+                id, customer_name, customer_phone, customer_email, customer_dni, dni_photo,
+                rental_type, start_date, end_date, start_hour, end_hour,
+                payment_method, pickup_location, return_location, total, deposit, status, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            reservation_id,
+            data.get('customer_name', 'Admin Reservation'),
+            data.get('customer_phone', ''),
+            data.get('customer_email', ''),
+            data.get('customer_dni', ''),
+            data.get('dni_photo', ''),
+            data.get('rental_type', 'full_day'),
+            data.get('start_date', datetime.now().strftime('%Y-%m-%d')),
+            data.get('end_date', data.get('start_date', datetime.now().strftime('%Y-%m-%d'))),
+            data.get('start_hour', OPERATING_START),
+            data.get('end_hour', OPERATING_END),
+            data.get('payment_method', 'cash'),
+            data.get('pickup_location', 'sucursal'),
+            data.get('return_location', 'sucursal'),
+            data.get('total', 0),
+            data.get('deposit', 0),
+            'confirmed', # Admin reservations are auto-confirmed
+            data.get('notes', 'Creada por admin')
+        ))
+        
+        # Add reservation items
+        for item in data.get('items', []):
+            cursor.execute('''
+                INSERT INTO reservation_items (reservation_id, category_id, quantity)
+                VALUES (?, ?, ?)
+            ''', (reservation_id, item['category_id'], item.get('quantity', 1)))
+            
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "reservation_id": reservation_id, "message": "Reserva admin creada exitosamente"})
+    
     
     cursor.execute('''
         SELECT r.*, GROUP_CONCAT(c.name || ' x' || ri.quantity, ', ') as items_str
