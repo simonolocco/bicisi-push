@@ -526,7 +526,11 @@
                         if (type !== 'hours') {
                             for (const slot of data.slots) {
                                 if (slot.hour >= checkStart && slot.hour < checkEnd && !slot.available) {
-                                    stockProblems.push(`<b>${item.category.name}</b>: sin stock el ${formatDateSafe(checkDate)} a las ${slot.hour}:00`);
+                                    if (slot.reason && slot.reason.includes('logística')) {
+                                        stockProblems.push(`<b>${item.category.name}</b>: ya pasó el límite de horario para este tipo de alquiler hoy. Pedí por horas simples.`);
+                                    } else {
+                                        stockProblems.push(`<b>${item.category.name}</b>: sin stock el ${formatDateSafe(checkDate)} a las ${slot.hour}:00`);
+                                    }
                                     break;
                                 }
                             }

@@ -469,6 +469,11 @@ def calculate_price():
     
     conn.close()
     
+    # Add full-day surcharge
+    if rental_type == 'full_day':
+        breakdown.append({"label": "Recargo día completo", "price": 5000})
+        total += 5000
+    
     # Add delivery fee if payment by transfer
     delivery_fee = 0
     if payment_method == 'transfer':
@@ -582,10 +587,20 @@ def create_reservation():
                 # Intermediate: full day
                 req_start, req_end = OPERATING_START, OPERATING_END
                 
+            now = datetime.now()
+            today = now.date()
+            current_hour = now.hour
+            
             for h in range(req_start, req_end):
                 if (day_reserved.get(h, 0) + qty) > max_stock:
                     conn.close()
                     return jsonify({"error": f"Lo sentimos, no hay stock disponible de '{cat_id}' para el día {date_str} a las {h}:00. Probá con otra fecha o menos unidades."}), 400
+                # Check if hours already passed for today
+                if curr_date == today and h <= current_hour + 1:
+                    rental_type = data.get('rental_type', '')
+                    if rental_type in ('full_day', 'half_day'):
+                        conn.close()
+                        return jsonify({"error": f"Ya pasó el límite de horario para reservar '{rental_type.replace('_', ' ')}' en el día de hoy. Por favor, pedí por horas simples."}), 400
                     
         curr_date += timedelta(days=1)
     # --- End Stock Check ---
