@@ -471,7 +471,7 @@ def calculate_price():
     
     # Add Modo FULL surcharge (online payment)
     if payment_method == 'mercadopago':
-        breakdown.append({"label": "Recargo Modo FULL", "price": 5000})
+        breakdown.append({"label": "Modo FULL", "price": 10000})
         total += 10000
     
     # Add delivery fee if payment by transfer
