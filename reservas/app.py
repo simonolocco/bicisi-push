@@ -469,9 +469,9 @@ def calculate_price():
     
     conn.close()
     
-    # Add full-day surcharge
-    if rental_type == 'full_day':
-        breakdown.append({"label": "Recargo día completo", "price": 5000})
+    # Add Modo FULL surcharge (online payment)
+    if payment_method == 'mercadopago':
+        breakdown.append({"label": "Recargo Modo FULL", "price": 5000})
         total += 5000
     
     # Add delivery fee if payment by transfer
