@@ -444,12 +444,9 @@ def calculate_price():
         
         qty = item.get('quantity', 1)
         
-        if rental_type == 'full_day':
+        if rental_type == 'libre':
             price = category['price_full_day'] * qty * days
-            label = f"{category['name']} x{qty} - {days} día(s) completo(s)"
-        elif rental_type == 'half_day':
-            price = category['price_half_day'] * qty * days
-            label = f"{category['name']} x{qty} - {days} medio día(s)"
+            label = f"{category['name']} x{qty} - {days} día(s) libre"
         elif rental_type == 'hours':
             # Cap hourly price at full day price
             hourly_price = category['price_per_hour'] * qty * hours
@@ -598,9 +595,9 @@ def create_reservation():
                 # Check if hours already passed for today
                 if curr_date == today and h <= current_hour + 1:
                     rental_type = data.get('rental_type', '')
-                    if rental_type in ('full_day', 'half_day'):
+                    if rental_type == 'libre':
                         conn.close()
-                        return jsonify({"error": f"Ya pasó el límite de horario para reservar '{rental_type.replace('_', ' ')}' en el día de hoy. Por favor, pedí por horas simples."}), 400
+                        return jsonify({"error": "Ya pasó el límite de horario para reservar 'libre' en el día de hoy. Por favor, pedí por horas simples."}), 400
                     
         curr_date += timedelta(days=1)
     # --- End Stock Check ---

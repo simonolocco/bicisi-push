@@ -123,8 +123,7 @@
                     <span class="text-gray-400 mb-2 block">Tipo de alquiler</span>
                     <select id="rentalType" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3"
                         onchange="updateRentalOptions()">
-                        <option value="full_day">Día completo (8:00 - 19:00)</option>
-                        <option value="half_day">Medio día</option>
+                        <option value="libre">Libre (retirás y devolvés cuando quieras)</option>
                         <option value="hours">Por horas</option>
                         <option value="multi_day">Varios días</option>
                     </select>
@@ -151,17 +150,7 @@
                         disponibilidad</p>
                     <div id="availabilityWarningText" class="text-red-300 text-sm"></div>
                 </div>
-                <div id="halfDayOptions" class="hidden mb-4">
-                    <span class="text-gray-400 mb-2 block">Turno</span>
-                    <div class="grid grid-cols-2 gap-4">
-                        <button type="button"
-                            class="half-day-btn bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 hover:border-bicisi-primary"
-                            data-shift="morning" onclick="selectHalfDay('morning')">Mañana (8:00-13:00)</button>
-                        <button type="button"
-                            class="half-day-btn bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 hover:border-bicisi-primary"
-                            data-shift="afternoon" onclick="selectHalfDay('afternoon')">Tarde (13:00-19:00)</button>
-                    </div>
-                </div>
+
                 <div id="hoursContainer" class="hidden">
                     <span class="text-gray-400 mb-2 block">Selecciona las horas (horarios inhabilitados por
                         logística)</span>
@@ -392,12 +381,10 @@
                     <div class="p-4">
                         <div class="flex justify-between items-start mb-2">
                             <h3 class="font-bold">${cat.name}</h3>
-                            <span class="bg-bicisi-primary/20 text-bicisi-primary px-2 py-1 rounded-lg text-xs">${cat.stock} disp.</span>
                         </div>
                         <p class="text-xs text-gray-400 mb-3">${cat.description || ''}</p>
                         <div class="text-sm text-gray-400 mb-3 space-y-1">
-                            <div class="flex justify-between"><span>Día:</span><span class="text-bicisi-primary font-bold">$${cat.price_full_day.toLocaleString()}</span></div>
-                            <div class="flex justify-between"><span>½ Día:</span><span class="text-bicisi-primary font-bold">$${cat.price_half_day.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>Libre (día):</span><span class="text-bicisi-primary font-bold">$${cat.price_full_day.toLocaleString()}</span></div>
                             <div class="flex justify-between"><span>Hora:</span><span class="text-bicisi-primary font-bold">$${cat.price_per_hour.toLocaleString()}</span></div>
                         </div>
                         <div class="flex items-center justify-center gap-3 bg-gray-700/50 rounded-xl p-2">
@@ -430,7 +417,6 @@
         function updateRentalOptions() {
             const type = document.getElementById('rentalType').value;
             document.getElementById('endDateContainer').classList.toggle('hidden', type !== 'multi_day');
-            document.getElementById('halfDayOptions').classList.toggle('hidden', type !== 'half_day');
             document.getElementById('hoursContainer').classList.toggle('hidden', type !== 'hours');
             checkDateAvailability();
         }
@@ -458,11 +444,6 @@
             const warningText = document.getElementById('availabilityWarningText');
 
             let checkStart = 8, checkEnd = 19;
-            if (type === 'half_day') {
-                if (!selectedHalfDay) { validateStep2(); return; }
-                if (selectedHalfDay === 'morning') { checkStart = 8; checkEnd = 13; }
-                else { checkStart = 13; checkEnd = 19; }
-            }
 
             let datesToCheck = [date];
             if (type === 'multi_day') {
@@ -633,7 +614,6 @@
             const startDate = document.getElementById('startDate').value;
             let valid = !!startDate;
             if (type === 'multi_day') valid = valid && !!document.getElementById('endDate').value;
-            if (type === 'half_day') valid = valid && !!selectedHalfDay;
             if (type === 'hours') valid = valid && selectedHours.length > 0;
 
             // Block if stock is not available
@@ -802,10 +782,6 @@
             }));
             const type = document.getElementById('rentalType').value;
             let startHour = 8, endHour = 19;
-            if (type === 'half_day') {
-                if (selectedHalfDay === 'morning') { startHour = 8; endHour = 13; }
-                else { startHour = 13; endHour = 19; }
-            }
             if (type === 'hours') {
                 startHour = Math.min(...selectedHours);
                 endHour = Math.max(...selectedHours) + 1;

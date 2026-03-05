@@ -169,19 +169,17 @@
                         <i
                             class="fas fa-bicycle text-6xl text-bicisi-primary/50 group-hover:scale-110 transition-transform duration-500"></i>
                         {% endif %}
-                        <div
-                            class="absolute top-4 right-4 bg-bicisi-accent text-white px-3 py-1 rounded-full text-sm font-bold">
-                            {{ category.stock }} disp.</div>
+
                     </div>
                     <div class="p-6">
                         <h3 class="text-xl font-bold text-white mb-2">{{ category.name }}</h3>
                         <p class="text-gray-400 text-sm mb-4">{{ category.description }}</p>
                         <div class="space-y-2 mb-4">
-                            <div class="flex justify-between text-sm"><span class="text-gray-500">Día
-                                    completo</span><span class="text-bicisi-primary font-bold">${{
+                            <div class="flex justify-between text-sm"><span class="text-gray-500">Libre
+                                    (día)</span><span class="text-bicisi-primary font-bold">${{
                                     "{:,.0f}".format(category.price_full_day) }}</span></div>
-                            <div class="flex justify-between text-sm"><span class="text-gray-500">Medio día</span><span
-                                    class="text-bicisi-primary font-bold">${{ "{:,.0f}".format(category.price_half_day)
+                            <div class="flex justify-between text-sm"><span class="text-gray-500">Por hora</span><span
+                                    class="text-bicisi-primary font-bold">${{ "{:,.0f}".format(category.price_per_hour)
                                     }}</span></div>
                         </div>
                         <a href="/reserva?category={{ category.id }}"
